@@ -1,77 +1,98 @@
-/*
+﻿/*
 How to compile
 
 g++ main.cpp
+or
+g++ -std=c++11 main.cpp -o main
 
 How to run
 ./a
 
-*/ 
+*/
 
 #include <iostream>
 #include <string>
 #include <map>
+#include <cstdlib>
 
-int mainMenu(){
+// Function declarations
+int mainMenu();
+void printHeader();
+
+int mainMenu() {
 
 	std::string command;
 
 	// Put additional inputs here...
-	std::map<std::string, int> stringMap ={
-		{"clear",1},
-		{"exits",2},
-		{"banana",3}, // Change this to the other command
-		{"potato",4} // Change this to the other command
+	std::map<std::string, int> stringMap = {
+		{"initialize",1},
+		{"screen",2},
+		{"scheduler-test",3},
+		{"scheduler-stop",4},
+		{"report-util",5},
+		{"clear",6},
+		{"exit",7}
 	};
 
-	int choice = 1;
+	int choice;
+	std::system("chcp 65001");
+	std::system("cls");
 
-	do{
-		if(choice == 1){
-			std::cout << "CSOPESY \n"; // Change this to the 2D version...
-			std::cout << "Hello, Welcome to CSOPESY commandline! \n";
-			std::cout << "Type 'exit' to quit, 'clear' to clear the screen \n";
-		}
-
+	do {
+		printHeader();
 		std::cout << "Enter a command: ";
 		std::cin >> command;
 
 		// This is the error handling, if command not found in map, then -> set to -1.
-		if(stringMap.count(command)){
+		if (stringMap.count(command)) {
 			choice = stringMap[command];
-		} else{
+		}
+		else {
 			choice = -1;
 		}
 
-		switch(choice){
-			case -1:
-				std::cout << "Unknown Command\n";
-				break;
-			case 1:
-				std::system("cls");
-				break;
-			case 2:
-				return 0;
-				break;
-			case 3:
-			case 4:
-			case 5:
-			case 6:
-
+		switch (choice) {
+		case -1:
+			std::cout << "Unknown Command\n";
+			break;
+		case 1:
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		case 4:
+			break;
+		case 5:
+			break;
+		case 6:
+			std::system("cls");
+			break;
+		case 7:
+			break;
+		default:
+			std::cout << "Something bad happened!";
+			return 0;
 		}
 
-	} while (choice != 2);
-	
+	} while (choice != 7);
+
 	return 0;
-	
+
 }
 
+void printHeader() {
+	std::cout << "░█████╗░░██████╗░█████╗░██████╗░███████╗░██████╗██╗░░░██╗\n";
+	std::cout << "██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔════╝██╔════╝╚██╗░██╔╝\n";
+	std::cout << "██║░░╚═╝╚█████╗░██║░░██║██████╔╝█████╗░░╚█████╗░░╚████╔╝░\n";
+	std::cout << "██║░░██╗░╚═══██╗██║░░██║██╔═══╝░██╔══╝░░░╚═══██╗░░╚██╔╝░░\n";
+	std::cout << "╚█████╔╝██████╔╝╚█████╔╝██║░░░░░███████╗██████╔╝░░░██║░░░\n";
+	std::cout << "\033[32mHello, Welcome to CSOPESY commandline!\033[0m\n";
+	std::cout << "\033[33mType 'exit' to quit, 'clear' to clear the screen \033[0m\n";
+}
 
+int main() {
 
-
-
-int main(){
-	
 	mainMenu();
 
 	return 0;
