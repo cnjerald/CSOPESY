@@ -56,14 +56,19 @@ int mainMenu() {
 			std::cout << "Unknown Command\n";
 			break;
 		case 1:
+			std::cout << "Initialize command recognized. Doing something.\n";
 			break;
 		case 2:
+			std::cout << "Screen command recognized. Doing something.\n";
 			break;
 		case 3:
+			std::cout << "Scheduler-test command recognized. Doing something.\n";
 			break;
 		case 4:
+			std::cout << "Scheduler-stop command recognized. Doing something.\n";
 			break;
 		case 5:
+			std::cout << "Report-util command recognized. Doing something.\n";
 			break;
 		case 6:
 			std::system("cls");
