@@ -35,8 +35,12 @@ int mainMenu() {
 	};
 
 	int choice;
-	std::system("chcp 65001");
-	std::system("cls");
+	#ifdef _WIN32
+    	std::system("chcp 65001");
+    	std::system("cls");
+	#else
+    	std::system("clear");
+	#endif
 
 	do {
 		printHeader();
@@ -71,7 +75,11 @@ int mainMenu() {
 			std::cout << "Report-util command recognized. Doing something.\n";
 			break;
 		case 6:
-			std::system("cls");
+			#ifdef _WIN32
+    			std::system("cls");
+			#else
+    			std::system("clear");
+			#endif
 			break;
 		case 7:
 			break;
