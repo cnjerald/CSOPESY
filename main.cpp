@@ -3,7 +3,7 @@ How to compile
 
 g++ main.cpp
 or
-g++ -std=c++11 main.cpp -o main
+g++ -std=c++20 main.cpp -o main
 
 How to run
 ./a
@@ -34,7 +34,8 @@ int mainMenu() {
 		{"exit",7}
 	};
 
-	int choice;
+	int choice = 6;
+
 	#ifdef _WIN32
     	std::system("chcp 65001");
     	std::system("cls");
@@ -43,7 +44,9 @@ int mainMenu() {
 	#endif
 
 	do {
-		printHeader();
+		if (choice == 6) {
+			printHeader();
+		}
 		std::cout << "Enter a command: ";
 		std::cin >> command;
 
