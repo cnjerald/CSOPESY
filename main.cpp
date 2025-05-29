@@ -85,60 +85,105 @@ int mainMenu() {
 		}
 
 		switch (choice) {
-		case -1:
-			std::cout << "Unknown Command\n";
-			break;
-		case 1:
-			std::cout << "Initialize command recognized. Doing something.\n";
-			break;
-		case 2:
-			std::cout << "Screen command recognized. Doing something.\n";
-			break;
-		case 3:
-			std::cout << "Scheduler-test command recognized. Doing something.\n";
-			break;
-		case 4:
-			std::cout << "Scheduler-stop command recognized. Doing something.\n";
-			break;
-		case 5:
-			std::cout << "Report-util command recognized. Doing something.\n";
-			break;
-		case 6:
-			// Clear screen pathway.
-			#ifdef _WIN32
-    			std::system("cls");
-			#else
-    			std::system("clear");
-			#endif
-			break;
-		case 7:
-			// Exit pathway
-			break;
-		case 8:
-			std::cout << "Retrieving a process...\n";
-			for (int i = 0; i < processes.size();i++) {
-				if (processes[i].name == processName) {
-					std::cout << "Process Name: " << processes[i].name << "\n";
-					std::cout << "Total lines of instruction: " << processes[i].totalLines << "\n";
-					std::cout << "Process Time: " << processes[i].time << "\n";
-					break;
+			case -1:
+				std::cout << "Unknown Command\n";
+				break;
+			case 1:
+				std::cout << "Initialize command recognized. Doing something.\n";
+				break;
+			case 2:
+				std::cout << "Screen command recognized. Doing something.\n";
+				break;
+			case 3:
+				std::cout << "Scheduler-test command recognized. Doing something.\n";
+				break;
+			case 4:
+				std::cout << "Scheduler-stop command recognized. Doing something.\n";
+				break;
+			case 5:
+				std::cout << "Report-util command recognized. Doing something.\n";
+				break;
+			case 6:
+				// Clear screen pathway.
+				#ifdef _WIN32
+    				std::system("cls");
+				#else
+    				std::system("clear");
+				#endif
+				break;
+			case 7:
+				// Exit pathway
+				break;
+			case 8: {
+				#ifdef _WIN32
+    				std::system("cls");
+				#else
+    				std::system("clear");
+				#endif
+				bool found = false;
+
+				for (const auto& proc : processes) {
+					if (proc.name == processName) {
+						std::cout << "Retrieving a process...\n";
+						std::cout << "Process Name: " << proc.name << "\n";
+						std::cout << "Total lines of instruction: " << proc.totalLines << "\n";
+						std::cout << "Process Time: " << proc.time << "\n";
+						found = true;
+						std::string input;
+						do {
+							std::cout << "Type 'exit' to go back to main menu: ";
+							std::getline(std::cin, input);
+
+							if (input != "exit") {
+								std::cout << "Unknown command\n";
+							}
+						} while (input != "exit");
+						#ifdef _WIN32
+							std::system("cls");
+						#else
+							std::system("clear");
+						#endif
+						choice = 6;
+						break;
+					}
 				}
-				else if (i == processes.size() - 1) {
-					std::cout << "Process not found!\n";
+				if (!found) {
+					std::cout << "Process \"" << processName << "\" not found.\n";
+					std::cout << "The user can access the screen anytime by typing \"screen -r <process name>\" in the main menu.\n";
 				}
+				break;
 			}
-			break;
-		case 9:
-			// This is the -s pathway, it creates a process.
-			std::cout << "Creating a new process...\n";
-			std::cout << "Process Name: " << processName << "\n";
-			std::cout << "Total line of instruction: 100" << "\n";// Blatantly hard coded.
-			std::cout << "Process Time: " << processTime << "\n";
-			processes.push_back({ processName, 100, processTime }); // Hard coded total lines.
-			break;
-		default:
-			std::cout << "Something bad happened!";
-			return 0;
+			case 9: {
+				#ifdef _WIN32
+					std::system("cls");
+				#else
+					std::system("clear");
+				#endif
+				// This is the -s pathway, it creates a process.
+				std::cout << "Creating a new process...\n";
+				std::cout << "Process Name: " << processName << "\n";
+				std::cout << "Total line of instruction: 100" << "\n"; // Hard coded
+				std::cout << "Process Time: " << processTime << "\n";
+
+				processes.push_back({ processName, 100, processTime }); // Add process to list
+
+				std::string input;
+				do {
+					std::cout << "Type 'exit' to go back to main menu: ";
+					std::getline(std::cin, input);
+
+					if (input != "exit") {
+						std::cout << "Unknown command\n";
+					}
+				} while (input != "exit");
+				#ifdef _WIN32
+					std::system("cls");
+				#else
+					std::system("clear");
+				#endif
+				choice = 6;
+				break;
+			}
 		}
 
 	} while (choice != 7);
