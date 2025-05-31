@@ -110,12 +110,13 @@ int mainMenu() {
 				// Exit pathway
 				break;
 			case 8: {
-				clearScreen();
+
 
 				bool found = false;
 
 				for (const auto& proc : processes) {
 					if (proc.name == processName) {
+						clearScreen();
 						std::cout << "Retrieving a process...\n";
 						std::cout << "Process Name: " << proc.name << "\n";
 						std::cout << "Total lines of instruction: " << proc.totalLines << "\n";
