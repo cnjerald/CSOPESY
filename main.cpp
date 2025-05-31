@@ -3,6 +3,8 @@ How to compile
 
 g++ main.cpp
 or
+g++ -std=c++11 main.cpp -o main
+or
 g++ -std=c++20 main.cpp -o main
 
 How to run
@@ -34,8 +36,6 @@ int mainMenu() {
 	// Storage for processes {TEMPORARY}
 	std::vector<process> processes;
 
-
-	// Put additional inputs here...
 	std::map<std::string, int> stringMap = {
 		{"initialize",1},
 		{"screen",2},
@@ -49,7 +49,6 @@ int mainMenu() {
 	std::string command;
 	int choice = 6;
 
-
 	// Regex for -r and -s.
 	std::string processName;
 	std::string processTime = getCurrentTime();
@@ -57,6 +56,7 @@ int mainMenu() {
 	std::regex screenS(R"(screen -s (\w+))");
 	std::smatch match;
 
+	std::system("chcp 65001");
 	clearScreen();
 
 	do {
@@ -104,12 +104,7 @@ int mainMenu() {
 				std::cout << "Report-util command recognized. Doing something.\n";
 				break;
 			case 6:
-				// Clear screen pathway.
-				#ifdef _WIN32
-    				std::system("cls");
-				#else
-    				std::system("clear");
-				#endif
+				clearScreen();
 				break;
 			case 7:
 				// Exit pathway
@@ -127,7 +122,7 @@ int mainMenu() {
 						std::cout << "Retrieving a process...\n";
 						std::cout << "Process Name: " << proc.name << "\n";
 						std::cout << "Total lines of instruction: " << proc.totalLines << "\n";
-						std::cout << "Process Time: " << proc.time << "\n";
+						std::cout << "Process Time: " << proc.time << "\n\n";
 						found = true;
 						std::string input;
 						do {
@@ -138,11 +133,9 @@ int mainMenu() {
 								std::cout << "Unknown command\n";
 							}
 						} while (input != "exit");
-						#ifdef _WIN32
-							std::system("cls");
-						#else
-							std::system("clear");
-						#endif
+
+						clearScreen();
+						
 						choice = 6;
 						break;
 					}
@@ -154,16 +147,13 @@ int mainMenu() {
 				break;
 			}
 			case 9: {
-				#ifdef _WIN32
-					std::system("cls");
-				#else
-					std::system("clear");
-				#endif
+				clearScreen();
+
 				// This is the -s pathway, it creates a process.
-				std::cout << "Creating a new process...\n";
+				std::cout << "Creating a new process...\n\n";
 				std::cout << "Process Name: " << processName << "\n";
 				std::cout << "Total line of instruction: 100" << "\n"; // Hard coded
-				std::cout << "Process Time: " << processTime << "\n";
+				std::cout << "Process Time: " << processTime << "\n\n";
 
 				processes.push_back({ processName, 100, processTime }); // Add process to list
 
@@ -176,11 +166,9 @@ int mainMenu() {
 						std::cout << "Unknown command\n";
 					}
 				} while (input != "exit");
-				#ifdef _WIN32
-					std::system("cls");
-				#else
-					std::system("clear");
-				#endif
+
+				clearScreen();
+
 				choice = 6;
 				break;
 			}
@@ -194,7 +182,6 @@ int mainMenu() {
 
 void clearScreen() {
 	#ifdef _WIN32
-		std::system("chcp 65001");
 		std::system("cls");
 	#else
 		std::system("clear");
