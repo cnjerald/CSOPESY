@@ -110,11 +110,8 @@ int mainMenu() {
 				// Exit pathway
 				break;
 			case 8: {
-				#ifdef _WIN32
-    				std::system("cls");
-				#else
-    				std::system("clear");
-				#endif
+				clearScreen();
+
 				bool found = false;
 
 				for (const auto& proc : processes) {
