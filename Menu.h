@@ -10,16 +10,23 @@
 #include <vector>
 #include "Process.h"
 #include "Utils.h"
-
+#include "InitConfig.h"
+#include "scheduler.h"
 int mainMenu();
+
 int mainMenu() {
+	//This is for initialization.
+	bool initialized = false;
+
 	// Storage for processes {TEMPORARY}
-	std::vector<process> processes;
+	std::vector<Process> processes;
+
+	Scheduler* scheduler = nullptr;
 
 	std::map<std::string, int> stringMap = {
 		{"initialize",1},
-		{"screen",2},
-		{"scheduler-test",3},
+		{"screen -ls",2},
+		{"scheduler-start",3},
 		{"scheduler-stop",4},
 		{"report-util",5},
 		{"clear",6},
@@ -64,18 +71,41 @@ int mainMenu() {
 			choice = -1;
 		}
 
+		if (!initialized && choice > 1 && choice < 6) {
+			std::cout << "You must initialize the system first by typing 'initialize'.\n";
+			choice = 10; // Reset choice to main menu
+		}
+
 		switch (choice) {
 			case -1:
 				std::cout << "Unknown Command\n";
 				break;
-			case 1:
-				std::cout << "Initialize command recognized. Doing something.\n";
+			case 1: {
+				Config config = initConfig("config.txt");
+				initialized = true;
+				scheduler = new Scheduler(config.num_cpu, config.scheduler, config.quantum_cycles);
+
+				std::thread cycleThread(&Scheduler::runOneCycleLoop, scheduler);
+				cycleThread.detach();
+
+				std::thread queueThread(&Scheduler::checkQueueLoop, scheduler);
+				queueThread.detach();
+
+				std::cout << "Initialized Successful.\n";
 				break;
+			}
 			case 2:
-				std::cout << "Screen command recognized. Doing something.\n";
+				scheduler->printProcessQueue();
+				scheduler->printCurrentProcess();
+				scheduler->printFinishedProcesses();
 				break;
 			case 3:
-				std::cout << "Scheduler-test command recognized. Doing something.\n";
+				std::cout << "Creating 10 sample processes.\n";
+				for (int i = 0; i < 10; ++i) {
+					std::string processName = "SampleProcess" + std::to_string(i);
+					std::string processTime = getCurrentTime();
+					scheduler->addQueue(Process(processName, processTime, 20));
+				}
 				break;
 			case 4:
 				std::cout << "Scheduler-stop command recognized. Doing something.\n";
@@ -87,7 +117,8 @@ int mainMenu() {
 				clearScreen();
 				break;
 			case 7:
-				// Exit pathway
+				delete scheduler;
+				scheduler = nullptr;
 				break;
 			case 8: {
 
@@ -95,12 +126,12 @@ int mainMenu() {
 				bool found = false;
 
 				for (const auto& proc : processes) {
-					if (proc.name == processName) {
+					if (proc.getName() == processName) {
 						clearScreen();
 						std::cout << "Retrieving a process...\n";
-						std::cout << "Process Name: " << proc.name << "\n";
-						std::cout << "Total lines of instruction: " << proc.totalLines << "\n";
-						std::cout << "Process Time: " << proc.time << "\n\n";
+						std::cout << "Process Name: " << proc.getName() << "\n";
+						std::cout << "Total lines of instruction: " << proc.getTotalLines() << "\n";
+						std::cout << "Process Time: " << proc.getTime() << "\n\n";
 						found = true;
 						std::string input;
 						do {
@@ -130,10 +161,10 @@ int mainMenu() {
 				// This is the -s pathway, it creates a process.
 				std::cout << "Creating a new process...\n\n";
 				std::cout << "Process Name: " << processName << "\n";
-				std::cout << "Total line of instruction: 100" << "\n"; // Hard coded
+				std::cout << "Total line of instruction: 10" << "\n"; // Hard coded
 				std::cout << "Process Time: " << processTime << "\n\n";
 
-				processes.push_back({ processName, 100, processTime }); // Add process to list
+				scheduler->addQueue(Process(processName, processTime, 10)); // Add process to scheduler queue
 
 				std::string input;
 				do {
@@ -148,6 +179,9 @@ int mainMenu() {
 				clearScreen();
 
 				choice = 6;
+				break;
+			}
+			case 10: {
 				break;
 			}
 		}
