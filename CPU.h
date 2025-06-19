@@ -15,22 +15,21 @@ public:
     // Constructor
     CPU(int cpu_number, int quantum_cycles)
         : cpu_name("CPU" + std::to_string(cpu_number)),
-        quantum_cycles(quantum_cycles),
-        isIdle(true) {
+          quantum_cycles(quantum_cycles),
+          isIdle(true) {
     }
 
     // Assign a process to the CPU
     void assignProcess(const Process& process) {
-        assigned_process = process;
-		assigned_process.assignedCore = std::stoi(cpu_name.substr(3)); // Extract CPU number from name
+        assigned_process = process;  // Still a copy unless your scheduler uses pointers
+        assigned_process.assignedCore = std::stoi(cpu_name.substr(3));
         isIdle = false;
     }
 
     // Simulate one clock cycle
     void oneClockCycle() {
         if (!isIdle && assigned_process.currentLine < assigned_process.getTotalLines()) {
-            // Simulate processing ASSUMING PRINT COMMAND!
-			assigned_process.printCommand();
+            assigned_process.printCommand();  // e.g., logs "Hello world from <name>!"
             assigned_process.currentLine++;
 
             if (assigned_process.currentLine == assigned_process.getTotalLines()) {
@@ -39,23 +38,26 @@ public:
         }
     }
 
-    // Check if CPU is idle
     bool isAvailable() const {
         return isIdle;
     }
 
-    // Retrieve current process (optional)
-    Process getCurrentProcess() const {
+    // ✅ Fixed: Return by reference
+    Process& getCurrentProcess() {
         return assigned_process;
     }
 
+    const Process& getCurrentProcess() const {
+    return assigned_process;
+    }
+    
     bool isFinished() const {
         return !isIdle && assigned_process.status == "finished";
     }
 
     Process retrieveFinishedProcess() {
-        isIdle = true;  // Mark CPU as available
-        return assigned_process;
+        isIdle = true;
+        return assigned_process;  // still okay to return by value here
     }
 };
 

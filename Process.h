@@ -11,6 +11,7 @@ public:
     std::string status;
     int currentLine;
     int assignedCore;
+    std::vector<std::string> logs;
 
     Process()
         : name(""), time(""), totalLines(0),
@@ -28,12 +29,19 @@ public:
     int getTotalLines() const { return totalLines; }
 
     void printCommand() {
+        std::string logEntry = getCurrentTime() + " Core:" + std::to_string(assignedCore)
+                            + " Line: " + std::to_string(currentLine)
+                            + " Hello world from " + name + "!";
+
+        // ✅ Add to in-memory logs for screen output
+        logs.push_back(logEntry);
+
+        // ✅ Write to file for audit/logging
         std::ofstream file(name + ".txt", std::ios::app);
         if (file.is_open()) {
-			file << getCurrentTime() << " Core:" << assignedCore << " Line: " << currentLine << " Hello World from " << name << "!\n";
+            file << logEntry << "\n";
             file.close();
-        }
-        else {
+        } else {
             std::cerr << "Failed to open file for process " << name << ".\n";
         }
     }

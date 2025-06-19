@@ -15,7 +15,7 @@ public:
     int quantum_cycles;
     std::string scheduler;
     std::vector<Process> processQueue;
-	std::vector<Process> finishedProcesses;  // Store finished processes
+    std::vector<Process> finishedProcesses;  // Store finished processes
     std::vector<CPU> cpus;  // Each CPU holds a Process
 
     // Constructor
@@ -44,26 +44,25 @@ public:
         }
 
         std::cout << "=== Current Process Queue ===\n";
-        for (int i = 0; i < processQueue.size(); i++) {
-            const Process& p = processQueue[i];
+        for (const Process& p : processQueue) {
             std::cout << "  Name: " << p.getName()
-                << " | Time: " << p.getTime()
-                << " | Progress: " << p.currentLine << "/" << p.getTotalLines()
-                << " | Status: " << p.status << "\n";
-
+                      << " | Time: " << p.getTime()
+                      << " | Progress: " << p.currentLine << "/" << p.getTotalLines()
+                      << " | Status: " << p.status << "\n";
         }
     }
+
     void printCurrentProcess() {
-		for (const auto& cpu : cpus) {
-			if (!cpu.isAvailable()) {
-				std::cout << "Current process on " << cpu.cpu_name << ":\n";
-				const Process& p = cpu.getCurrentProcess();
+        for (const auto& cpu : cpus) {
+            if (!cpu.isAvailable()) {
+                std::cout << "Current process on " << cpu.cpu_name << ":\n";
+                const Process& p = cpu.getCurrentProcess();
                 std::cout << "  Name: " << p.getName()
-                    << " | Time: " << p.getTime()
-                    << " | Progress: " << p.currentLine << "/" << p.getTotalLines()
-                    << " | Status: " << p.status << "\n";
-			}
-		}
+                          << " | Time: " << p.getTime()
+                          << " | Progress: " << p.currentLine << "/" << p.getTotalLines()
+                          << " | Status: " << p.status << "\n";
+            }
+        }
     }
 
     void printFinishedProcesses() {
@@ -75,12 +74,11 @@ public:
         std::cout << "=== Finished Processes ===\n";
         for (const auto& p : finishedProcesses) {
             std::cout << "  Name: " << p.getName()
-                << " | Time: " << p.getTime()
-                << " | Progress: " << p.currentLine << "/" << p.getTotalLines()
-                << " | Status: " << p.status << "\n";
+                      << " | Time: " << p.getTime()
+                      << " | Progress: " << p.currentLine << "/" << p.getTotalLines()
+                      << " | Status: " << p.status << "\n";
         }
     }
-
 
     void addQueue(const Process& process) {
         processQueue.push_back(process);
@@ -114,6 +112,92 @@ public:
         }
     }
 
+    // ✅ Attach to screen with live reference
+    void attachToScreen(const std::string& name) {
+        // 1. Running
+        for (auto& cpu : cpus) {
+            if (!cpu.isAvailable() && cpu.getCurrentProcess().getName() == name) {
+                Process& p = cpu.getCurrentProcess();
+                clearScreen();
+
+                std::string input;
+                std::cout << "Process name: " << p.getName() << "\n";
+                std::cout << "ID: " << p.assignedCore << "\n";
+                std::cout << "Logs:\n";
+                for (const auto& log : p.logs) {
+                    std::cout << log << "\n";
+                }
+                std::cout << "\nCurrent instruction line: " << p.currentLine << "\n";
+                std::cout << "Lines of code: " << p.getTotalLines() << "\n\n";
+
+                do {
+                    std::cout << "root:\\> ";
+                    std::getline(std::cin, input);
+
+                    if (input == "process-smi") {
+                        std::cout << "Process name: " << p.getName() << "\n";
+                        std::cout << "ID: " << p.assignedCore << "\n";
+                        std::cout << "Logs:\n";
+                        for (const auto& log : p.logs) {
+                            std::cout << log << "\n";
+                        }
+                        std::cout << "\nCurrent instruction line: " << p.currentLine << "\n";
+                        std::cout << "Lines of code: " << p.getTotalLines() << "\n";
+                        if (p.status == "finished" || p.currentLine == p.getTotalLines()) {
+                            std::cout << "\nFinished!\n";
+                        }
+                    }
+                    else if (input != "exit") {
+                        std::cout << "Unknown command\n";
+                    }
+
+                } while (input != "exit");
+
+                clearScreen();
+                return;
+            }
+        }
+
+        // 2. Finished
+        for (const auto& p : finishedProcesses) {
+            if (p.getName() == name) {
+                clearScreen();
+                std::cout << "Process name: " << p.getName() << "\n";
+                std::cout << "ID: " << p.assignedCore << "\n";
+                std::cout << "Logs:\n";
+                for (const auto& log : p.logs) {
+                    std::cout << log << "\n";
+                }
+                std::cout << "\nCurrent instruction line: " << p.currentLine << "\n";
+                std::cout << "Lines of code: " << p.getTotalLines() << "\n";
+                std::cout << "\nFinished!\n";
+                std::cout << "root:\\> ";
+                std::string dummy;
+                std::getline(std::cin, dummy);
+                clearScreen();
+                return;
+            }
+        }
+
+        // 3. Queued
+        for (auto& p : processQueue) {
+            if (p.getName() == name) {
+                clearScreen();
+                std::cout << "Process name: " << p.getName() << "\n";
+                std::cout << "ID: waiting\n";
+                std::cout << "Logs:\n(No logs yet. Waiting to be scheduled...)\n";
+                std::cout << "\nCurrent instruction line: " << p.currentLine << "\n";
+                std::cout << "Lines of code: " << p.getTotalLines() << "\n";
+                std::cout << "\nroot:\\> ";
+                std::string dummy;
+                std::getline(std::cin, dummy);
+                clearScreen();
+                return;
+            }
+        }
+
+        std::cout << "Process \"" << name << "\" not found.\n";
+    }
 };
 
 #endif // SCHEDULER_H
