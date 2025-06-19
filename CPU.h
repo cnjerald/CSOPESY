@@ -29,20 +29,17 @@ public:
     // Simulate one clock cycle
     void oneClockCycle() {
         if (!isIdle && assigned_process.currentLine < assigned_process.getTotalLines()) {
-            assigned_process.printCommand();  // e.g., logs "Hello world from <name>!"
-            assigned_process.currentLine++;
-
-            if (assigned_process.currentLine == assigned_process.getTotalLines()) {
-                assigned_process.setStatus("finished");
-            }
+            assigned_process.executeInstruction();  // Executes any type        
+        } else if (!isIdle && assigned_process.currentLine == assigned_process.getTotalLines()){
+            assigned_process.setStatus("finished");
         }
     }
+
 
     bool isAvailable() const {
         return isIdle;
     }
 
-    // ✅ Fixed: Return by reference
     Process& getCurrentProcess() {
         return assigned_process;
     }

@@ -14,6 +14,25 @@
 #include "scheduler.h"
 
 int mainMenu();
+bool schedulerRunning = true;
+
+
+void createProcess(Scheduler* scheduler, Config config) {
+    static int totalCreated = 0;
+
+    while (schedulerRunning) {
+        std::string processName = "SampleProcess" + std::to_string(totalCreated++);
+        std::string processTime = getCurrentTime();
+        int instructionCount = config.min_ins + (rand() % (config.max_ins - config.min_ins + 1));
+
+        scheduler->addQueue(Process(processName, processTime, instructionCount));
+
+        std::this_thread::sleep_for(std::chrono::seconds(config.batch_process_freq));
+    }
+}
+
+
+
 
 int mainMenu() {
     bool initialized = false;
@@ -39,6 +58,8 @@ int mainMenu() {
 
     std::system("chcp 65001");
     clearScreen();
+    std::srand(std::time(nullptr));
+    Config config;
 
     do {
         if (choice == 6) {
@@ -74,7 +95,7 @@ int mainMenu() {
                 break;
 
             case 1: {
-                Config config = initConfig("config.txt");
+                config = initConfig("config.txt");
                 initialized = true;
                 scheduler = new Scheduler(config.num_cpu, config.scheduler, config.quantum_cycles);
 
@@ -94,19 +115,17 @@ int mainMenu() {
                 scheduler->printFinishedProcesses();
                 break;
 
-            case 3:
-                std::cout << "Creating 10 sample processes.\n";
-                for (int i = 0; i < 10; ++i) {
-                    std::string processName = "SampleProcess" + std::to_string(i);
-                    std::string processTime = getCurrentTime();
-                    scheduler->addQueue(Process(processName, processTime, 20));
-                }
+            case 3:{
+                std::cout << "Generating sample processes.\n";
+                std::thread schedulerStartThread(createProcess, scheduler, config);
+                schedulerStartThread.detach();
                 break;
-
-            case 4:
-                std::cout << "Scheduler-stop command recognized. Doing something.\n";
+            }
+            case 4:{
+                std::cout << "Scheduler-stop command recognized.\n";
+                schedulerRunning = false;
                 break;
-
+            }
             case 5:
                 std::cout << "Report-util command recognized. Doing something.\n";
                 break;
@@ -141,12 +160,15 @@ int mainMenu() {
 
                 std::cout << "Creating a new process...\n\n";
                 std::string processTime = getCurrentTime();
+
+                int instructionCount = config.min_ins + (std::rand() % (config.max_ins - config.min_ins + 1));
+
                 std::cout << "Process Name: " << processName << "\n";
-                std::cout << "Total line of instruction: 10\n";
+                std::cout << "Total line of instruction: " << instructionCount << "\n";
                 std::cout << "Process Time: " << processTime << "\n\n";
 
-                scheduler->addQueue(Process(processName, processTime, 10));
-                scheduler->attachToScreen(processName);
+                scheduler->addQueue(Process(processName, processTime, instructionCount));
+                scheduler->attachToScreen(processName);  // directly enter screen after creation
 
                 choice = 6;
                 break;
@@ -160,5 +182,7 @@ int mainMenu() {
 
     return 0;
 }
+
+
 
 #endif
