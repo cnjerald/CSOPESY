@@ -13,14 +13,15 @@ class Scheduler {
 public:
     int num_cpu;
     int quantum_cycles;
+    int delay_per_exec;
     std::string scheduler;
     std::vector<Process> processQueue;
     std::vector<Process> finishedProcesses;  // Store finished processes
     std::vector<CPU> cpus;  // Each CPU holds a Process
 
     // Constructor
-    Scheduler(int num_cpu, const std::string& scheduler, int quantum_cycles)
-        : num_cpu(num_cpu), scheduler(scheduler), quantum_cycles(quantum_cycles)
+    Scheduler(int num_cpu, const std::string& scheduler, int quantum_cycles, int delay_per_exec)
+		: num_cpu(num_cpu), scheduler(scheduler), quantum_cycles(quantum_cycles), delay_per_exec(delay_per_exec)
     {
         for (int i = 0; i < num_cpu; i++) {
             cpus.emplace_back(i, quantum_cycles);
@@ -30,10 +31,11 @@ public:
     // Check queue and assign available CPUs
     void checkQueue() {
         for (auto& cpu : cpus) {
-            if (scheduler == "FCFS" && cpu.isAvailable() && !processQueue.empty()) {
+            if ((scheduler == "FCFS" || scheduler =="RR") && cpu.isAvailable() && !processQueue.empty()) {
                 cpu.assignProcess(processQueue.front());
                 processQueue.erase(processQueue.begin());
             }
+
         }
     }
 
@@ -87,32 +89,66 @@ public:
 
     // Simulate 1 clock cycle across all CPUs
     void runOneCycle() {
-        for (auto& cpu : cpus) {
-            cpu.oneClockCycle();
+        if (scheduler == "FCFS") {
+            for (auto& cpu : cpus) {
+                cpu.oneClockCycle();
 
-            // Check if this CPU has finished its assigned process
-            if (cpu.isFinished()) {
-                Process finished = cpu.retrieveFinishedProcess();
-                finishedProcesses.push_back(finished);
+                // Check if this CPU has finished its assigned process
+                if (cpu.isFinished()) {
+                    Process finished = cpu.retrieveFinishedProcess();
+                    finishedProcesses.push_back(finished);
+                }
             }
         }
+        else if (scheduler == "RR") {
+            for (auto& cpu : cpus) {
+                if (cpu.RRexecutionCounter <= cpu.quantum_cycles) {
+                    cpu.oneClockCycle();
+                    cpu.RRexecutionCounter++;
+                }
+                else if (cpu.RRexecutionCounter > cpu.quantum_cycles && !cpu.isIdle){ // may ginagawa ba si cpu?, if no then ignore
+                    processQueue.push_back(cpu.getCurrentProcess()); // stash
+                    cpu.assignProcess(processQueue.front()); // assign
+                    processQueue.erase(processQueue.begin()); // remove
+					cpu.RRexecutionCounter = 0; // Reset.
+                }
+                
+                if (cpu.isFinished()) {
+                    Process finished = cpu.retrieveFinishedProcess();
+                    finishedProcesses.push_back(finished);
+                    cpu.RRexecutionCounter = 0;
+                }
+            }
+        }
+
     }
 
+    // CPU CYCLER
     void runOneCycleLoop() {
+        static int cycleCounter = 0;
+        static int skipCount = 0;
+        const int N = delay_per_exec;
+
         while (true) {
+            if (skipCount < N) {
+                ++skipCount;
+                continue;
+            }
+
+            skipCount = 0;
             runOneCycle();
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            ++cycleCounter;
+			std::this_thread::sleep_for(std::chrono::milliseconds(500)); // safeguard.
         }
     }
-
+    
     void checkQueueLoop() {
         while (true) {
             checkQueue();
-            std::this_thread::sleep_for(std::chrono::seconds(5));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));// TO PROTECT YOUR PC!
         }
     }
 
-    // ✅ Attach to screen with live reference
     void attachToScreen(const std::string& name) {
         // 1. Running
         for (auto& cpu : cpus) {

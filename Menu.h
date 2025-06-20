@@ -19,15 +19,23 @@ bool schedulerRunning = true;
 
 void createProcess(Scheduler* scheduler, Config config) {
     static int totalCreated = 0;
+    static int skipCount = 0;
+    const int N = config.batch_process_freq;
 
     while (schedulerRunning) {
+        if (skipCount < N) {
+            ++skipCount;
+            continue; // Skip this loop iteration to simulate delay
+        }
+
+        skipCount = 0; // Reset skip counter
+
         std::string processName = "SampleProcess" + std::to_string(totalCreated++);
         std::string processTime = getCurrentTime();
         int instructionCount = config.min_ins + (rand() % (config.max_ins - config.min_ins + 1));
 
         scheduler->addQueue(Process(processName, processTime, instructionCount));
-
-        std::this_thread::sleep_for(std::chrono::seconds(config.batch_process_freq));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // PARA D SUMABOG PC NYO WAG NYO MASYADO BABAAN
     }
 }
 
@@ -97,7 +105,7 @@ int mainMenu() {
             case 1: {
                 config = initConfig("config.txt");
                 initialized = true;
-                scheduler = new Scheduler(config.num_cpu, config.scheduler, config.quantum_cycles);
+                scheduler = new Scheduler(config.num_cpu, config.scheduler, config.quantum_cycles,config.delay_per_exec);
 
                 std::thread cycleThread(&Scheduler::runOneCycleLoop, scheduler);
                 cycleThread.detach();

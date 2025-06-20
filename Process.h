@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <algorithm>
 #include "Utils.h"
+#include <filesystem>
 
 class Process {
 public:
@@ -39,16 +40,22 @@ public:
     void printCommand() {
         std::string msg = "Hello world from " + name + "!";
         std::string logEntry = getCurrentTime() + " Core:" + std::to_string(assignedCore)
-                             + " " + msg;
+            + " " + msg;
 
         logs.push_back(logEntry);
 
-        std::ofstream file(name + ".txt", std::ios::app);
+        // Ensure the "logs" directory exists
+        std::filesystem::create_directory("logs");
+
+        std::string filePath = "logs/" + name + ".txt";
+        std::ofstream file(filePath, std::ios::app);
+
         if (file.is_open()) {
             file << logEntry << "\n";
             file.close();
-        } else {
-            std::cerr << "Failed to open file for process " << name << ".\n";
+        }
+        else {
+            std::cerr << "Failed to open log file for process " << name << ".\n";
         }
     }
 

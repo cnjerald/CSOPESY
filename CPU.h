@@ -11,6 +11,7 @@ public:
     Process assigned_process;
     int quantum_cycles;
     bool isIdle;
+    int RRexecutionCounter = 0;
 
     // Constructor
     CPU(int cpu_number, int quantum_cycles)
@@ -21,7 +22,7 @@ public:
 
     // Assign a process to the CPU
     void assignProcess(const Process& process) {
-        assigned_process = process;  // Still a copy unless your scheduler uses pointers
+        assigned_process = process;
         assigned_process.assignedCore = std::stoi(cpu_name.substr(3));
         isIdle = false;
     }
