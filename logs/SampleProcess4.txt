@@ -1,0 +1,16 @@
+06/21/2025, 01:00:13 PM Core:0 Hello world from SampleProcess4!
+06/21/2025, 01:00:15 PM Core:0 Hello world from SampleProcess4!
+06/21/2025, 01:00:15 PM Core:0 Hello world from SampleProcess4!
+06/21/2025, 01:00:20 PM Core:0 Hello world from SampleProcess4!
+06/21/2025, 01:00:21 PM Core:0 Hello world from SampleProcess4!
+06/21/2025, 01:00:34 PM Core:3 Hello world from SampleProcess4!
+06/21/2025, 01:00:35 PM Core:3 Hello world from SampleProcess4!
+06/21/2025, 01:00:47 PM Core:2 Hello world from SampleProcess4!
+06/21/2025, 01:01:13 PM Core:1 Hello world from SampleProcess4!
+06/21/2025, 01:01:15 PM Core:1 Hello world from SampleProcess4!
+06/21/2025, 01:01:15 PM Core:1 Hello world from SampleProcess4!
+06/21/2025, 01:01:21 PM Core:2 Hello world from SampleProcess4!
+06/21/2025, 01:01:22 PM Core:2 Hello world from SampleProcess4!
+06/21/2025, 01:03:37 PM Core:1 Hello world from SampleProcess4!
+06/21/2025, 01:03:40 PM Core:1 Hello world from SampleProcess4!
+06/21/2025, 01:03:40 PM Core:1 Hello world from SampleProcess4!

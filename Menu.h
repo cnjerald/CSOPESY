@@ -130,12 +130,13 @@ int mainMenu() {
                 break;
             }
             case 4:{
-                std::cout << "Scheduler-stop command recognized.\n";
+                std::cout << "Scheduler-stop command recognized. Terminating Process Generation\n";
                 schedulerRunning = false;
                 break;
             }
             case 5:
                 std::cout << "Report-util command recognized. Doing something.\n";
+                scheduler->printSystemStatusToFile();
                 break;
 
             case 6:

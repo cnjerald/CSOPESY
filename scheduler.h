@@ -40,6 +40,20 @@ public:
     }
 
     void printProcessQueue() {
+
+        // put header here so...
+		int idleCPUs = 0;
+        for (const auto& cpu : cpus) {
+            if (cpu.isIdle) {
+                idleCPUs++;
+            }
+        }
+        float utilPercent = static_cast<float>(num_cpu - idleCPUs) / num_cpu * 100.0f;
+
+        std::cout << "CPU Utilization: " << utilPercent << "%\n";
+        std::cout << "Cores Used: " << (num_cpu - idleCPUs) << "\n";
+        std::cout << "Cores Available: " << idleCPUs << "\n";
+        std::cout << "========================================== "<< "\n";
         if (processQueue.empty()) {
             std::cout << "No processes in the queue.\n";
             return;
@@ -55,9 +69,10 @@ public:
     }
 
     void printCurrentProcess() {
+		std::cout << "=== Current Processes on CPUs ===\n";
         for (const auto& cpu : cpus) {
             if (!cpu.isAvailable()) {
-                std::cout << "Current process on " << cpu.cpu_name << ":\n";
+                std::cout << "Current process on " << cpu.cpu_name << ":";
                 const Process& p = cpu.getCurrentProcess();
                 std::cout << "  Name: " << p.getName()
                           << " | Time: " << p.getTime()
@@ -80,6 +95,72 @@ public:
                       << " | Progress: " << p.currentLine << "/" << p.getTotalLines()
                       << " | Status: " << p.status << "\n";
         }
+    }
+
+    void printSystemStatusToFile() {
+        std::ofstream outFile("system_status.txt");
+
+        if (!outFile.is_open()) {
+            std::cerr << "Failed to open file for writing.\n";
+            return;
+        }
+
+        // CPU Utilization
+        int idleCPUs = 0;
+        for (const auto& cpu : cpus) {
+            if (cpu.isIdle) {
+                idleCPUs++;
+            }
+        }
+        float utilPercent = static_cast<float>(num_cpu - idleCPUs) / num_cpu * 100.0f;
+
+        outFile << "CPU Utilization: " << utilPercent << "%\n";
+        outFile << "Cores Used: " << (num_cpu - idleCPUs) << "\n";
+        outFile << "Cores Available: " << idleCPUs << "\n";
+        outFile << "==========================================\n";
+
+        // Process Queue
+        if (processQueue.empty()) {
+            outFile << "No processes in the queue.\n";
+        }
+        else {
+            outFile << "=== Current Process Queue ===\n";
+            for (const Process& p : processQueue) {
+                outFile << "  Name: " << p.getName()
+                    << " | Time: " << p.getTime()
+                    << " | Progress: " << p.currentLine << "/" << p.getTotalLines()
+                    << " | Status: " << p.status << "\n";
+            }
+        }
+
+        // Current Processes on CPUs
+        outFile << "=== Current Processes on CPUs ===\n";
+        for (const auto& cpu : cpus) {
+            if (!cpu.isAvailable()) {
+                outFile << "Current process on " << cpu.cpu_name << ":";
+                const Process& p = cpu.getCurrentProcess();
+                outFile << "  Name: " << p.getName()
+                    << " | Time: " << p.getTime()
+                    << " | Progress: " << p.currentLine << "/" << p.getTotalLines()
+                    << " | Status: " << p.status << "\n";
+            }
+        }
+
+        // Finished Processes
+        if (finishedProcesses.empty()) {
+            outFile << "No finished processes.\n";
+        }
+        else {
+            outFile << "=== Finished Processes ===\n";
+            for (const auto& p : finishedProcesses) {
+                outFile << "  Name: " << p.getName()
+                    << " | Time: " << p.getTime()
+                    << " | Progress: " << p.currentLine << "/" << p.getTotalLines()
+                    << " | Status: " << p.status << "\n";
+            }
+        }
+
+        outFile.close();
     }
 
     void addQueue(const Process& process) {
