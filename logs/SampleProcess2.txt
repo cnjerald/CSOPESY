@@ -1,6 +1,0 @@
-06/21/2025, 01:00:13 PM Core:2 Hello world from SampleProcess2!
-06/21/2025, 01:00:28 PM Core:0 Hello world from SampleProcess2!
-06/21/2025, 01:00:29 PM Core:0 Hello world from SampleProcess2!
-06/21/2025, 01:00:30 PM Core:0 Hello world from SampleProcess2!
-06/21/2025, 01:01:12 PM Core:2 Hello world from SampleProcess2!
-06/21/2025, 01:03:37 PM Core:2 Hello world from SampleProcess2!

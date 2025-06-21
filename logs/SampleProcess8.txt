@@ -1,3 +1,0 @@
-06/21/2025, 01:00:34 PM Core:0 Hello world from SampleProcess8!
-06/21/2025, 01:00:35 PM Core:0 Hello world from SampleProcess8!
-06/21/2025, 01:01:22 PM Core:1 Hello world from SampleProcess8!
