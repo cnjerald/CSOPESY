@@ -14,10 +14,10 @@ struct Config {
     int min_ins;
     int max_ins;
     int delay_per_exec;
+    int max_overall_mem;
+    int mem_per_frame;
+    int mem_per_proc;
 };
-
-
-
 
 Config initConfig();
 
@@ -47,6 +47,9 @@ Config initConfig(const std::string& filename) {
         else if (key == "min-ins") config.min_ins = std::stoi(value);
         else if (key == "max-ins") config.max_ins = std::stoi(value);
         else if (key == "delay-per-exec") config.delay_per_exec = std::stoi(value);
+        else if (key == "max-overall-mem") config. max_overall_mem = std::stoi(value);
+        else if (key == "mem-per-frame") config.mem_per_frame = std::stoi(value);
+        else if (key == "mem-per-proc") config.mem_per_proc = std::stoi(value);
     }
 
     return config;

@@ -12,10 +12,15 @@
 #include "Process.h"
 #include <mutex>
 #include "CPU.h"
-
+#include "MemoryManager.h"
 
 class Scheduler {
+private:
+    MemoryManager memoryManager;
+    int cycleCounter = 0;
+
 public:
+    // int cycleCounter = 0;
     int num_cpu;
     int quantum_cycles;
     int delay_per_exec;
@@ -24,20 +29,29 @@ public:
     std::vector<Process> finishedProcesses;
     std::vector<CPU> cpus;
     std::mutex mtx;
+    // MemoryManager memoryManager;
 
-    Scheduler(int num_cpu, const std::string& scheduler, int quantum_cycles, int delay_per_exec)
-        : num_cpu(num_cpu), scheduler(scheduler), quantum_cycles(quantum_cycles), delay_per_exec(delay_per_exec)
-    {
+    Scheduler(int num_cpu, const std::string& scheduler, int quantum_cycles, int delay_per_exec, int max_mem, int mem_per_frame, int mem_per_proc) 
+    : num_cpu(num_cpu), scheduler(scheduler), quantum_cycles(quantum_cycles), delay_per_exec(delay_per_exec), memoryManager(max_mem, mem_per_frame, mem_per_proc), cycleCounter(0) {
         for (int i = 0; i < num_cpu; i++) {
             cpus.emplace_back(i, quantum_cycles);
         }
     }
-
+    
     void checkQueue() {
         for (auto& cpu : cpus) {
             if ((scheduler == "FCFS" || scheduler == "RR") && cpu.isAvailable() && !processQueue.empty()) {
-                cpu.assignProcess(*processQueue.front());
-                processQueue.pop_front();
+                auto& process = processQueue.front();
+                
+                // This will try to allocate memory to current process
+                if (memoryManager.allocateMemory(process->getName())) {
+                    cpu.assignProcess(*process);
+                    processQueue.pop_front();
+                } else {
+                    // No memory available, move back to queue and repeat
+                    processQueue.push_back(std::move(process));
+                    processQueue.pop_front();
+                }
             }
         }
     }
@@ -163,23 +177,19 @@ public:
     }
 
     void runOneCycle() {
-        if (scheduler == "FCFS") {
-            for (auto& cpu : cpus) {
-                cpu.oneClockCycle();
-                if (cpu.isFinished()) {
-                    Process finished = cpu.retrieveFinishedProcess();
-                    finishedProcesses.push_back(finished);
-                }
-            }
-        }
-        else if (scheduler == "RR") {
+        if (scheduler == "RR") {
             for (auto& cpu : cpus) {
                 try {
-                    if (cpu.RRexecutionCounter <= cpu.quantum_cycles && !cpu.isIdle) {
+                    if (cpu.RRexecutionCounter <= quantum_cycles && !cpu.isIdle) {
                         cpu.oneClockCycle();
                         cpu.RRexecutionCounter++;
+                        
+                        // Generate snapshot every quantum cycle
+                        if (cpu.RRexecutionCounter % quantum_cycles == 0) {
+                            memoryManager.generateMemorySnapshot(cycleCounter);
+                        }
                     }
-                    else if (cpu.RRexecutionCounter > cpu.quantum_cycles && !cpu.isIdle) {
+                    else if (cpu.RRexecutionCounter > quantum_cycles && !cpu.isIdle) {
                         processQueue.push_back(std::make_unique<Process>(cpu.getCurrentProcess()));
                         if (!processQueue.empty()) {
                             cpu.assignProcess(*processQueue.front());
@@ -191,13 +201,15 @@ public:
                     if (cpu.isFinished()) {
                         Process finished = cpu.retrieveFinishedProcess();
                         finishedProcesses.push_back(finished);
-                        cpu.RRexecutionCounter = 0; // Reset
+                        memoryManager.deallocateMemory(finished.getName());
+                        cpu.RRexecutionCounter = 0;
                     }
                 }
                 catch (const std::exception& e) {
                     // Handle error
                 }
             }
+            cycleCounter++;
         }
     }
 

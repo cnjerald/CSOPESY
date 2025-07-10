@@ -1,4 +1,5 @@
 .vs/
+.vscode/
+logs/
 start.bat
 main.exe
-/main.exe

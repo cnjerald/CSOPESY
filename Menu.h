@@ -16,7 +16,6 @@
 int mainMenu();
 bool schedulerRunning = true;
 
-
 void createProcess(Scheduler* scheduler, Config config) {
     static int totalCreated = 0;
     static int skipCount = 0;
@@ -38,9 +37,6 @@ void createProcess(Scheduler* scheduler, Config config) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // PARA D SUMABOG PC NYO WAG NYO MASYADO BABAAN
     }
 }
-
-
-
 
 int mainMenu() {
     bool initialized = false;
@@ -105,7 +101,7 @@ int mainMenu() {
             case 1: {
                 config = initConfig("config.txt");
                 initialized = true;
-                scheduler = new Scheduler(config.num_cpu, config.scheduler, config.quantum_cycles,config.delay_per_exec);
+                scheduler = new Scheduler(config.num_cpu, config.scheduler, config.quantum_cycles, config.delay_per_exec, config.max_overall_mem, config.mem_per_frame, config.mem_per_proc);
 
                 std::thread cycleThread(&Scheduler::runOneCycleLoop, scheduler);
                 cycleThread.detach();
