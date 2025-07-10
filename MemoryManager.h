@@ -4,9 +4,8 @@
 
 #include <vector>
 #include <string>
-#include <iostream>
 #include <fstream>
-// #include <filesystem> WHY DOES IT CRASH
+// #include <filesystem>
 
 struct MemoryBlock {
     int start;
@@ -88,21 +87,20 @@ public:
     }
 
     void generateMemorySnapshot(int quantum) {
-        // THIS ENTIRE THING CRASHES IF I USE FILESYSTEM, BUT IF I SAVE IT IN THE CURRENT DIRECTORY IT WORKS WTF
-        // if fixed I think we're pretty much done na
+        currentQuantum = quantum;
 
         // std::filesystem::create_directory("memory_stamps");
-
         // std::string filename = "memory_stamps/memory_stamp_" + std::to_string(quantum) + ".txt";
-        // std::ofstream outFile(filename, std::ios::app);
+        std::string filename = "memory_stamp_" + std::to_string(quantum) + ".txt";
+        std::ofstream outFile(filename);
         
-        // if (!outFile.is_open()) {
-        //     return;
-        // }
+        if (!outFile.is_open()) {
+            return;
+        }
 
         outFile << "Timestamp: " << getCurrentTime() << "\n";
         
-        // Count processes in memory
+        // Count processes currently in memory
         int processCount = 0;
         for (const auto& block : memoryBlocks) {
             if (block.allocated) processCount++;
@@ -126,6 +124,19 @@ public:
         
         outFile.close();
     }
+
+    // This function is in Utils.h but for some reason, the program stops working if I include "Utils.h"
+    std::string getCurrentTime() {
+        time_t timestamp;
+        time(&timestamp);
+        struct tm* localTime = localtime(&timestamp);
+
+        char buffer[80];
+        strftime(buffer, sizeof(buffer), "%m/%d/%Y, %I:%M:%S %p", localTime);
+
+        return std::string(buffer);
+    }
+
 };
 
 #endif // MEMORYMANAGER_H
