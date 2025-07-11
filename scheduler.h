@@ -29,7 +29,6 @@ public:
     std::vector<Process> finishedProcesses;
     std::vector<CPU> cpus;
     std::mutex mtx;
-    // MemoryManager memoryManager;
 
     Scheduler(int num_cpu, const std::string& scheduler, int quantum_cycles, int delay_per_exec, int max_mem, int mem_per_frame, int mem_per_proc) 
     : num_cpu(num_cpu), scheduler(scheduler), quantum_cycles(quantum_cycles), delay_per_exec(delay_per_exec), memoryManager(max_mem, mem_per_frame, mem_per_proc), cycleCounter(0) {
@@ -190,11 +189,17 @@ public:
                         }
                     }
                     else if (cpu.RRexecutionCounter > quantum_cycles && !cpu.isIdle) {
+                        memoryManager.deallocateMemory(cpu.getCurrentProcess().getName());
                         processQueue.push_back(std::make_unique<Process>(cpu.getCurrentProcess()));
                         if (!processQueue.empty()) {
+                            memoryManager.allocateMemory((*processQueue.front()).getName());
                             cpu.assignProcess(*processQueue.front());
                             processQueue.pop_front();
                             cpu.RRexecutionCounter = 0;
+                        }
+                        // Generate snapshot every quantum cycle
+                        if (cpu.RRexecutionCounter % quantum_cycles == 0) {
+                            memoryManager.generateMemorySnapshot(cycleCounter);
                         }
                     }
 
@@ -225,7 +230,7 @@ public:
                 runOneCycle();
             }
             ++cycleCounter;
-            //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 

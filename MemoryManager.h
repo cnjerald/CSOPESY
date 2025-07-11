@@ -6,7 +6,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-// #include <filesystem> WHY DOES IT CRASH
+#include <filesystem>
 
 struct MemoryBlock {
     int start;
@@ -31,39 +31,54 @@ public:
     }
 
     bool allocateMemory(const std::string& processName) {
-        // First-fit algorithm
         for (auto it = memoryBlocks.begin(); it != memoryBlocks.end(); ++it) {
             if (!it->allocated && (it->end - it->start + 1) >= maxProcessMemory) {
-                // Split the block if there's remaining space
-                if ((it->end - it->start + 1) > maxProcessMemory) {
-                    MemoryBlock newBlock = {it->start + maxProcessMemory, it->end, false, ""};
-                    memoryBlocks.insert(it + 1, newBlock);
-                }
-                it->end = it->start + maxProcessMemory - 1;
+                int originalStart = it->start;
+                int originalEnd = it->end;
+
+                // Modify the current block to be the allocated one
+                it->end = originalStart + maxProcessMemory - 1;
                 it->allocated = true;
                 it->processName = processName;
+
+                // Insert remaining free block after it (if any)
+                if (it->end < originalEnd) {
+                    MemoryBlock newBlock = { it->end + 1, originalEnd, false, "" };
+                    memoryBlocks.insert(it + 1, newBlock);
+                }
+
                 return true;
             }
         }
         return false; // No suitable block found
     }
 
+
     void deallocateMemory(const std::string& processName) {
         for (auto it = memoryBlocks.begin(); it != memoryBlocks.end(); ++it) {
             if (it->allocated && it->processName == processName) {
                 it->allocated = false;
                 it->processName = "";
-                
-                // Merge with adjacent free blocks
-                if (it != memoryBlocks.begin() && !(it-1)->allocated) {
-                    (it-1)->end = it->end;
-                    memoryBlocks.erase(it);
-                    it = (it-1);
+
+                // Try to merge with previous block
+                if (it != memoryBlocks.begin()) {
+                    auto prev = std::prev(it);
+                    if (!prev->allocated) {
+                        prev->end = it->end;
+                        it = memoryBlocks.erase(it);  // erase current, move `it` to next
+                        it = prev;  // move `it` back to prev (the merged block)
+                    }
                 }
-                if (it != (memoryBlocks.end()-1) && !(it+1)->allocated) {
-                    it->end = (it+1)->end;
-                    memoryBlocks.erase(it+1);
+
+                // Try to merge with next block
+                if (std::next(it) != memoryBlocks.end()) {
+                    auto next = std::next(it);
+                    if (!next->allocated) {
+                        it->end = next->end;
+                        memoryBlocks.erase(next);
+                    }
                 }
+
                 break;
             }
         }
@@ -87,44 +102,48 @@ public:
         return (largestFreeBlock >= maxProcessMemory) ? 0 : totalFree;
     }
 
+
     void generateMemorySnapshot(int quantum) {
-        // THIS ENTIRE THING CRASHES IF I USE FILESYSTEM, BUT IF I SAVE IT IN THE CURRENT DIRECTORY IT WORKS WTF
-        // if fixed I think we're pretty much done na
 
-        // std::filesystem::create_directory("memory_stamps");
+        std::filesystem::create_directory("memory_stamps");
 
-        // std::string filename = "memory_stamps/memory_stamp_" + std::to_string(quantum) + ".txt";
-        // std::ofstream outFile(filename, std::ios::app);
-        
-        // if (!outFile.is_open()) {
-        //     return;
-        // }
+        std::string filename = std::string("memory_stamps/") + "Quantum Cycle" + std::to_string(quantum) + ".txt";
 
-        outFile << "Timestamp: " << getCurrentTime() << "\n";
-        
-        // Count processes in memory
-        int processCount = 0;
-        for (const auto& block : memoryBlocks) {
-            if (block.allocated) processCount++;
-        }
-        outFile << "Number of processes in memory: " << processCount << "\n";
-        
-        int fragmentation = calculateExternalFragmentation();
-        outFile << "Total external fragmentation in KB: " << (fragmentation/1024) << "\n\n";
-        
-        outFile << "---end--- = " << totalMemory << "\n\n";
-        
-        for (auto it = memoryBlocks.rbegin(); it != memoryBlocks.rend(); ++it) {
-            if (it->allocated) {
-                outFile << it->end + 1 << "\n";
-                outFile << it->processName << "\n";
-                outFile << it->start << "\n\n";
+        std::ofstream outFile(filename, std::ios::app);
+
+        if (outFile.is_open()) {
+            outFile << "Timestamp: " << getCurrentTime() << "\n";
+
+            // Count processes in memory
+            int processCount = 0;
+            for (const auto& block : memoryBlocks) {
+                if (block.allocated) processCount++;
             }
+            outFile << "Number of processes in memory: " << processCount << "\n";
+
+            int fragmentation = calculateExternalFragmentation();
+            outFile << "Total external fragmentation in KB: " << (fragmentation / 1024) << "\n\n";
+
+            outFile << "---end--- = " << totalMemory << "\n\n";
+
+            for (auto it = memoryBlocks.rbegin(); it != memoryBlocks.rend(); ++it) {
+                if (it->allocated) {
+                    outFile << it->end + 1 << "\n";
+                    outFile << it->processName << "\n";
+                    outFile << it->start << "\n\n";
+                }
+            }
+
+            outFile << "---start--- = 0\n";
+
+            outFile.close();
         }
+        else {
+            std::cout << ("Err opening file");
+        }
+
+
         
-        outFile << "---start--- = 0\n";
-        
-        outFile.close();
     }
 };
 

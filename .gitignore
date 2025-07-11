@@ -1,5 +1,6 @@
 .vs/
 .vscode/
-logs/
 start.bat
 main.exe
+logs/
+memory_stamps/
