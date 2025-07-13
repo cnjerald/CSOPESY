@@ -107,7 +107,7 @@ public:
 
         std::filesystem::create_directory("memory_stamps");
 
-        std::string filename = std::string("memory_stamps/") + "Quantum Cycle" + std::to_string(quantum) + ".txt";
+        std::string filename = std::string("memory_stamps/") + "memory_stamp_" + std::to_string(quantum) + ".txt";
 
         std::ofstream outFile(filename, std::ios::app);
 
