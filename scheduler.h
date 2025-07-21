@@ -12,15 +12,10 @@
 #include "Process.h"
 #include <mutex>
 #include "CPU.h"
-#include "MemoryManager.h"
+#include "Pager.h"
 
 class Scheduler {
-private:
-    MemoryManager memoryManager;
-    int cycleCounter = 0;
-
 public:
-    // int cycleCounter = 0;
     int num_cpu;
     int quantum_cycles;
     int delay_per_exec;
@@ -29,31 +24,39 @@ public:
     std::vector<Process> finishedProcesses;
     std::vector<CPU> cpus;
     std::mutex mtx;
+    Pager pager;
 
-    Scheduler(int num_cpu, const std::string& scheduler, int quantum_cycles, int delay_per_exec, int max_mem, int mem_per_frame, int mem_per_proc) 
-    : num_cpu(num_cpu), scheduler(scheduler), quantum_cycles(quantum_cycles), delay_per_exec(delay_per_exec), memoryManager(max_mem, mem_per_frame, mem_per_proc), cycleCounter(0) {
+    Scheduler(int num_cpu, const std::string& scheduler, int quantum_cycles, int delay_per_exec, int total_frames)
+        : num_cpu(num_cpu), scheduler(scheduler), quantum_cycles(quantum_cycles), delay_per_exec(delay_per_exec),
+          pager(total_frames)
+    {
         for (int i = 0; i < num_cpu; i++) {
             cpus.emplace_back(i, quantum_cycles);
         }
     }
-    
+
     void checkQueue() {
         for (auto& cpu : cpus) {
             if ((scheduler == "FCFS" || scheduler == "RR") && cpu.isAvailable() && !processQueue.empty()) {
-                auto& process = processQueue.front();
-                
-                // This will try to allocate memory to current process
-                if (memoryManager.allocateMemory(process->getName())) {
-                    cpu.assignProcess(*process);
-                    processQueue.pop_front();
-                } else {
-                    // No memory available, move back to queue and repeat
-                    processQueue.push_back(std::move(process));
-                    processQueue.pop_front();
+                Process* process = processQueue.front().get();
+
+                // Assign pages to frames before assigning to CPU
+                for (int i = 0; i < process->pages.size(); ++i) {
+                    if (!process->pages[i].isValid) {
+                        bool success = pager.assignFrame(process->getName(), i);
+                        if (success) {
+                            process->pages[i].isValid = true;
+                        }
+                    }
                 }
+
+
+                cpu.assignProcess(*process);  // Pass by reference
+                processQueue.pop_front();     // Remove from queue after assignment
             }
         }
     }
+
 
     void printProcessQueue() {
         int idleCPUs = 0;
@@ -176,45 +179,41 @@ public:
     }
 
     void runOneCycle() {
-        if (scheduler == "RR") {
+        if (scheduler == "FCFS") {
+            for (auto& cpu : cpus) {
+                cpu.oneClockCycle(pager);
+                if (cpu.isFinished()) {
+                    Process finished = cpu.retrieveFinishedProcess();
+                    finishedProcesses.push_back(finished);
+                }
+            }
+        }
+        else if (scheduler == "RR") {
             for (auto& cpu : cpus) {
                 try {
-                    if (cpu.RRexecutionCounter <= quantum_cycles && !cpu.isIdle) {
-                        cpu.oneClockCycle();
+                    if (cpu.RRexecutionCounter <= cpu.quantum_cycles && !cpu.isIdle) {
+                        cpu.oneClockCycle(pager);
                         cpu.RRexecutionCounter++;
-                        
-                        // Generate snapshot every quantum cycle
-                        if (cpu.RRexecutionCounter % quantum_cycles == 0) {
-                            memoryManager.generateMemorySnapshot(cycleCounter);
-                        }
                     }
-                    else if (cpu.RRexecutionCounter > quantum_cycles && !cpu.isIdle) {
-                        memoryManager.deallocateMemory(cpu.getCurrentProcess().getName());
+                    else if (cpu.RRexecutionCounter > cpu.quantum_cycles && !cpu.isIdle) {
                         processQueue.push_back(std::make_unique<Process>(cpu.getCurrentProcess()));
                         if (!processQueue.empty()) {
-                            memoryManager.allocateMemory((*processQueue.front()).getName());
                             cpu.assignProcess(*processQueue.front());
                             processQueue.pop_front();
                             cpu.RRexecutionCounter = 0;
-                        }
-                        // Generate snapshot every quantum cycle
-                        if (cpu.RRexecutionCounter % quantum_cycles == 0) {
-                            memoryManager.generateMemorySnapshot(cycleCounter);
                         }
                     }
 
                     if (cpu.isFinished()) {
                         Process finished = cpu.retrieveFinishedProcess();
                         finishedProcesses.push_back(finished);
-                        memoryManager.deallocateMemory(finished.getName());
-                        cpu.RRexecutionCounter = 0;
+                        cpu.RRexecutionCounter = 0; // Reset
                     }
                 }
                 catch (const std::exception& e) {
                     // Handle error
                 }
             }
-            cycleCounter++;
         }
     }
 

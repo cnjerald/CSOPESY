@@ -16,10 +16,15 @@
 int mainMenu();
 bool schedulerRunning = true;
 
+
 void createProcess(Scheduler* scheduler, Config config) {
     static int totalCreated = 0;
     static int skipCount = 0;
     const int N = config.batch_process_freq;
+	int max_frames = config.max_mem_per_proc / config.mem_per_frame;
+	int min_frames = config.min_mem_per_proc / config.mem_per_frame;
+    
+	int randomPageCount = min_frames + (rand() % (max_frames - min_frames + 1));
 
     while (schedulerRunning) {
         if (skipCount < N) {
@@ -33,10 +38,13 @@ void createProcess(Scheduler* scheduler, Config config) {
         std::string processTime = getCurrentTime();
         int instructionCount = config.min_ins + (rand() % (config.max_ins - config.min_ins + 1));
 
-        scheduler->addQueue(Process(processName, processTime, instructionCount));
+        scheduler->addQueue(Process(processName, processTime, instructionCount, randomPageCount));
         std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // PARA D SUMABOG PC NYO WAG NYO MASYADO BABAAN
     }
 }
+
+
+
 
 int mainMenu() {
     bool initialized = false;
@@ -101,7 +109,10 @@ int mainMenu() {
             case 1: {
                 config = initConfig("config.txt");
                 initialized = true;
-                scheduler = new Scheduler(config.num_cpu, config.scheduler, config.quantum_cycles, config.delay_per_exec, config.max_overall_mem, config.mem_per_frame, config.mem_per_proc);
+                // total frames
+				int total_frames = config.max_overall_mem / config.mem_per_frame;
+
+                scheduler = new Scheduler(config.num_cpu, config.scheduler, config.quantum_cycles,config.delay_per_exec,total_frames);
 
                 std::thread cycleThread(&Scheduler::runOneCycleLoop, scheduler);
                 cycleThread.detach();
@@ -171,8 +182,8 @@ int mainMenu() {
                 std::cout << "Process Name: " << processName << "\n";
                 std::cout << "Total line of instruction: " << instructionCount << "\n";
                 std::cout << "Process Time: " << processTime << "\n\n";
-
-                scheduler->addQueue(Process(processName, processTime, instructionCount));
+                int randomPageCount = 8;
+                scheduler->addQueue(Process(processName, processTime, instructionCount, randomPageCount));
                 scheduler->attachToScreen(processName);  // directly enter screen after creation
 
                 choice = 6;
