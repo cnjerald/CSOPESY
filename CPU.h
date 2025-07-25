@@ -2,6 +2,7 @@
 #define CPU_H
 
 #include <iostream>
+#include <cmath>
 #include <string>
 #include "Process.h"
 
@@ -16,8 +17,8 @@ public:
     // Constructor
     CPU(int cpu_number, int quantum_cycles)
         : cpu_name("CPU" + std::to_string(cpu_number)),
-          quantum_cycles(quantum_cycles),
-          isIdle(true) {
+        quantum_cycles(quantum_cycles),
+        isIdle(true) {
     }
 
     // Assign a process to the CPU
@@ -28,14 +29,71 @@ public:
     }
 
     // Simulate one clock cycle
-    void oneClockCycle() {
-        if (!isIdle && assigned_process.currentLine < assigned_process.getTotalLines()) {
-            assigned_process.executeInstruction();  // Executes any type        
-        } else if (!isIdle && assigned_process.currentLine == assigned_process.getTotalLines()){
+    void oneClockCycle(Pager& pager) {
+        if (isIdle) return;
+
+        int currentLine = assigned_process.currentLine;
+        int totalLines = assigned_process.getTotalLines();
+
+        if (currentLine >= totalLines) {
             assigned_process.setStatus("finished");
+            evictUnusedPages(pager);
+            return;
+        }
+
+        // Ensure the page for currentLine is in memory
+        if (!handlePageFault(pager)) {
+            std::cout << "Page fault at line " << currentLine
+                << " (Page #" << getPageIndexForLine(currentLine)
+                << ") — not in memory.\n";
+            return; // Wait for memory before executing
+        }
+
+        assigned_process.executeInstruction();
+
+        // Evict any no-longer-needed pages after execution
+        evictUnusedPages(pager);
+
+    }
+
+    void evictUnusedPages(Pager& pager) {
+        const auto& instructions = assigned_process.instructions;
+        auto& pages = assigned_process.pages;
+        int currentLine = assigned_process.currentLine;
+        const std::string& name = assigned_process.getName();
+
+        int instructionsPerPage = std::ceil((float)instructions.size() / pages.size());
+
+        for (int i = 0; i < pages.size(); ++i) {
+            int startLine = i * instructionsPerPage;
+            int endLine = std::min((i + 1) * instructionsPerPage, (int)instructions.size());
+
+            if (pages[i].isValid && currentLine >= endLine) {
+                pages[i].isValid = false;
+                pager.removeFrame(name, i);
+                std::cout << "Evicted page #" << i << " of process " << name << '\n';
+            }
         }
     }
 
+    bool handlePageFault(Pager& pager) {
+        int currentLine = assigned_process.currentLine;
+        int pageIndex = getPageIndexForLine(currentLine);
+        if (!assigned_process.pages[pageIndex].isValid) {
+            if (pager.assignFrame(assigned_process.getName(), pageIndex)) {
+                assigned_process.pages[pageIndex].isValid = true;
+                std::cout << "Handled page fault: Assigned Page #" << pageIndex << '\n';
+                return true;
+            }
+            return false; // Still no free frame
+        }
+        return true; // Page already valid
+    }
+
+    int getPageIndexForLine(int line) const {
+        int instructionsPerPage = std::ceil((float)assigned_process.instructions.size() / assigned_process.pages.size());
+        return line / instructionsPerPage;
+    }
 
     bool isAvailable() const {
         return isIdle;
@@ -46,16 +104,16 @@ public:
     }
 
     const Process& getCurrentProcess() const {
-    return assigned_process;
+        return assigned_process;
     }
-    
+
     bool isFinished() const {
         return !isIdle && assigned_process.status == "finished";
     }
 
     Process retrieveFinishedProcess() {
         isIdle = true;
-        return assigned_process;  // still okay to return by value here
+        return assigned_process;  // safe to return by value
     }
 };
 

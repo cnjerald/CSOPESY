@@ -11,6 +11,13 @@
 #include <algorithm>
 #include "Utils.h"
 #include <filesystem>
+#include <cmath>
+#include "Pager.h"
+
+struct Page {
+    int pageNumber;
+    bool isValid;
+};
 
 class Process {
 public:
@@ -21,21 +28,42 @@ public:
     std::vector<std::string> instructions;
     std::map<std::string, uint16_t> variables;
     int sleepCounter = 0;
+    std::vector<Page> pages;
 
     Process()
         : name(""), time(""), totalLines(0),
-          status("ready"), currentLine(0), assignedCore(-1) {}
+        status("ready"), currentLine(0), assignedCore(-1) {
+    }
 
     Process(const std::string& name, const std::string& time, int totalLines,
-            const std::string& status = "ready", int currentLine = 0, int assignedCore = -1)
+        int pageCount,
+        const std::string& status = "ready", int currentLine = 0, int assignedCore = -1)
         : name(name), time(time), totalLines(totalLines),
-          status(status), currentLine(currentLine), assignedCore(assignedCore) {
+        status(status), currentLine(currentLine), assignedCore(assignedCore) {
+
         generateRandomInstructions(totalLines);
+        generateRandomPages(pageCount);
+        //printPages();
     }
 
     std::string getName() const { return name; }
     std::string getTime() const { return time; }
     int getTotalLines() const { return totalLines; }
+
+    void generateRandomPages(int pageCount) {
+        for (int i = 0; i < pageCount; ++i) {
+            pages.push_back(Page{ i, false }); // TEST Marked invalid initially
+        }
+    }
+    void printPages() const {
+        std::cout << "Process: " << name << " | Pages: \n";
+        for (const auto& page : pages) {
+            std::cout << "  Page #" << page.pageNumber
+                << " | Valid: " << (page.isValid ? "Yes" : "No") << '\n';
+        }
+        std::cout << std::endl;
+    }
+
 
     void printCommand() {
         std::string msg = "Hello world from " + name + "!";
@@ -66,6 +94,15 @@ public:
         }
 
         if (currentLine >= instructions.size()) return;
+
+        int instructionsPerPage = std::ceil((float)instructions.size() / pages.size());
+        int pageIndex = currentLine / instructionsPerPage;
+
+        if (pageIndex >= pages.size() || !pages[pageIndex].isValid) {
+            std::cout << "Page fault at line " << currentLine
+                << " (Page #" << pageIndex << ") — not in memory.\n";
+            return; // Simulate page fault — don’t execute
+        }
 
         std::string instr = instructions[currentLine];
 
@@ -110,6 +147,7 @@ public:
             return;
         }
         currentLine++;
+
     }
 
     void setStatus(const std::string& newStatus) {
@@ -126,6 +164,8 @@ public:
             instructions.push_back(types[index]);
         }
     }
+
+
 
 private:
     std::string name;
