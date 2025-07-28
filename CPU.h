@@ -13,6 +13,9 @@ public:
     int quantum_cycles;
     bool isIdle;
     int RRexecutionCounter = 0;
+    int idleTicks = 0;
+    int activeTicks = 0;
+    int totalTicks = 0;
 
     // Constructor
     CPU(int cpu_number, int quantum_cycles)
@@ -30,7 +33,14 @@ public:
 
     // Simulate one clock cycle
     void oneClockCycle(Pager& pager) {
-        if (isIdle) return;
+        // Add to total ticks
+        totalTicks++;
+        if (isIdle) {
+            idleTicks++;
+        return;
+        }
+        // Add to active ticks if it gets pass idle
+        activeTicks++;
 
         int currentLine = assigned_process.currentLine;
         int totalLines = assigned_process.getTotalLines();
@@ -45,7 +55,7 @@ public:
         if (!handlePageFault(pager)) {
             std::cout << "Page fault at line " << currentLine
                 << " (Page #" << getPageIndexForLine(currentLine)
-                << ") — not in memory.\n";
+                << ") ï¿½ not in memory.\n";
             return; // Wait for memory before executing
         }
 
@@ -95,6 +105,12 @@ public:
         return line / instructionsPerPage;
     }
 
+    void printProcessTick() const {
+    std::cout << "Total Ticks: " << totalTicks << "\n";
+    std::cout << "Active Ticks: " << activeTicks << "\n";   
+    std::cout << "Idle Ticks: " << idleTicks << "\n";
+    }
+
     bool isAvailable() const {
         return isIdle;
     }
@@ -115,6 +131,20 @@ public:
         isIdle = true;
         return assigned_process;  // safe to return by value
     }
+
+    int getTotalTicks() const {
+        return activeTicks + idleTicks;
+    }
+
+    int getActiveTicks() const {
+        return activeTicks;
+    }
+
+    int getIdleTicks() const {
+        return idleTicks;
+    }
+
+
 };
 
 #endif // CPU_H

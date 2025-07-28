@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include "Utils.h"
 
 struct MemoryBlock {
     int start;

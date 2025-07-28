@@ -383,6 +383,61 @@ public:
 
         std::cout << "Process \"" << name << "\" not found.\n";
     }
+
+    void printVMStat() {
+        std::cout << "==== VM Statistics ====\n";
+
+        // === Frame Usage ===
+        int totalFrames = 0;
+        int usedFrames = 0;
+
+        std::cout << "\n=== Frame Usage ===\n";
+
+        for (const auto& entry : pager.pageTable) {
+            int frameNumber = entry.first;
+            const std::string& processName = entry.second.first;
+            int pageNumber = entry.second.second;
+
+            if (!processName.empty()) {
+                std::cout << "Frame #" << frameNumber
+                        << "  Process: " << processName
+                        << ", Page: " << pageNumber << "\n";
+                usedFrames++;
+            }
+
+            totalFrames++;  // Assuming all pageTable entries are valid frames
+        }
+
+        int availableFrames = totalFrames - usedFrames;
+
+        std::cout << "\n--- Frame Summary ---\n";
+        std::cout << "Total Frames: " << totalFrames << "\n";
+        std::cout << "Used Frames: " << usedFrames << "\n";
+        std::cout << "Available Frames: " << availableFrames << "\n";
+
+        // CPU Tick Stats
+        int totalTicks = 0;
+        int activeTicks = 0;
+        int idleTicks = 0;
+
+        for (const auto& cpu : cpus) {
+            totalTicks += cpu.getTotalTicks();
+            activeTicks += cpu.getActiveTicks();
+            idleTicks += cpu.getIdleTicks();
+        }
+
+        std::cout << "\n=== CPU Tick Statistics ===\n";
+        std::cout << "Total Ticks: " << totalTicks << "\n";
+        std::cout << "Active Ticks: " << activeTicks << "\n";
+        std::cout << "Idle Ticks: " << idleTicks << "\n";
+
+        // Paging Stats
+        std::cout << "\n=== Paging Statistics ===\n";
+        std::cout << "Pages Paged In: " << pager.pagesPagedIn << "\n";
+        std::cout << "Pages Paged Out: " << pager.pagesPagedOut << "\n";
+    }
+
+
 };
 
 #endif // SCHEDULER_H

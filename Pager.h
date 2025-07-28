@@ -12,6 +12,8 @@ public:
     // (FrameNumber) -> (ProcessName, PageNumber)
     std::unordered_map<int, std::pair<std::string, int>> pageTable;
     BackInStore* store;
+    int pagesPagedIn = 0;
+    int pagesPagedOut = 0;
 
     Pager(int totalFrames, BackInStore* store) : store(store) {
         for (int i = 0; i < totalFrames; ++i) {
@@ -33,6 +35,7 @@ public:
         for (auto& entry : pageTable) {
             if (entry.second.first.empty()) {
                 entry.second = { processName, pageNumber };
+                pagesPagedIn++;  // Increment counter
                 std::cout << "Assigned Frame " << entry.first
                     << " to Process: " << processName
                     << ", Page: " << pageNumber << '\n';
@@ -58,6 +61,7 @@ public:
         for (auto& entry : pageTable) {
             if (entry.second.first == processName && entry.second.second == processPageNumber) {
                 entry.second = { "", -1 }; // Free the frame
+                pagesPagedOut++;  // Increment counter
                 return;
             }
         }

@@ -44,9 +44,6 @@ void createProcess(Scheduler* scheduler, Config config) {
     }
 }
 
-
-
-
 int mainMenu() {
     bool initialized = false;
     Scheduler* scheduler = nullptr;
@@ -200,7 +197,7 @@ int mainMenu() {
             case 10:
                 break;
             case 11:
-                scheduler->printAvailableMemory();
+                scheduler->printVMStat();
 				break;
         }
 
