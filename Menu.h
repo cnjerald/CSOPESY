@@ -65,7 +65,7 @@ int mainMenu() {
 
     std::string processName;
     std::regex screenR(R"(screen -r (\w+))");
-    std::regex screenS(R"(screen -s (\w+))");
+    std::regex screenS(R"(screen -s (\w+)(?:\s+(\d+))?)");
     std::smatch match;
 
     std::system("chcp 65001");
@@ -180,16 +180,39 @@ int mainMenu() {
 
                 int instructionCount = config.min_ins + (std::rand() % (config.max_ins - config.min_ins + 1));
 
+                std::string processName = match[1];
+                int requestedMemory;
+
+                if (match.size() > 2 && match[2].matched) {
+                    // Specific use case: screen -s name memory
+                    requestedMemory = std::stoi(match[2]);
+
+                    // Validate memory: must be a power of 2 and between 64 and 65536 bytes
+                    if (requestedMemory < 64 || requestedMemory > 65536 || (requestedMemory & (requestedMemory - 1)) != 0) {
+                        std::cout << "Invalid memory allocation: must be a power of 2 between 64 and 65536 bytes.\n";
+                        choice = 6;
+                        break;
+                    }
+                } else {
+                    // General use case: screen -s name
+                    int max_frames = config.max_mem_per_proc / config.mem_per_frame;
+                    int min_frames = config.min_mem_per_proc / config.mem_per_frame;
+                    int randomPageCount = min_frames + (rand() % (max_frames - min_frames + 1));
+                    requestedMemory = randomPageCount * config.mem_per_frame;
+                }
+
+                int requiredPages = requestedMemory / config.mem_per_frame;
+                if (requestedMemory % config.mem_per_frame != 0) {
+                    requiredPages += 1;
+                }
+
+                std::cout << "Creating a new process...\n\n";
                 std::cout << "Process Name: " << processName << "\n";
                 std::cout << "Total line of instruction: " << instructionCount << "\n";
-                std::cout << "Process Time: " << processTime << "\n\n";
-
-                int max_frames = config.max_mem_per_proc / config.mem_per_frame;
-                int min_frames = config.min_mem_per_proc / config.mem_per_frame;
-
-                int randomPageCount = min_frames + (rand() % (max_frames - min_frames + 1));
+                std::cout << "Process Time: " << processTime << "\n";
+                std::cout << "Requested Memory: " << requestedMemory << " bytes (" << requiredPages << " page(s))\n\n";
                 
-                scheduler->addQueue(Process(processName, processTime, instructionCount, randomPageCount));
+                scheduler->addQueue(Process(processName, processTime, instructionCount, requiredPages));
                 scheduler->attachToScreen(processName);  // directly enter screen after creation
 
                 choice = 6;
