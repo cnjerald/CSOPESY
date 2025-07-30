@@ -77,10 +77,19 @@ public:
         return false;
     }
 
+    int getUsedMemoryFrames() const {
+        int used = 0;
+        for (const auto& entry : pageTable) {
+            if (!entry.second.first.empty()) {
+                used++;
+            }
+        }
+        return used;
+    }
 
-
-
-
+    int getTotalFrames() const {
+        return pageTable.size();
+    }
 };
 
 

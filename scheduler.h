@@ -8,14 +8,20 @@
 #include <memory>
 #include <thread>
 #include <chrono>
-#include <fstream>  // <-- Required for ofstream
+#include <fstream>  // <-- Required for ofstream]
+#include <unordered_map>
+#include <iomanip>
 #include "Process.h"
 #include <mutex>
 #include "CPU.h"
 #include "Pager.h"
 #include "BackInStore.h"
+#include "InitConfig.h"
 
 class Scheduler {
+private:
+    Config config;
+
 public:
     int num_cpu;
     int quantum_cycles;
@@ -28,7 +34,6 @@ public:
     BackInStore store;
     Pager pager;
 
-
     Scheduler(int num_cpu, const std::string& scheduler, int quantum_cycles, int delay_per_exec, int total_frames)
         : num_cpu(num_cpu), scheduler(scheduler), quantum_cycles(quantum_cycles), delay_per_exec(delay_per_exec),
           store(), pager(total_frames, &store)
@@ -38,7 +43,9 @@ public:
         }
     }
 
-
+    void setConfig(const Config& cfg) {
+        config = cfg;
+    }
 
     void checkQueue() {
         for (auto& cpu : cpus) {
@@ -53,7 +60,7 @@ public:
 					}
 				}
 				if (!frameAvailable) {
-					std::cout << "No available frames for CPU " << cpu.cpu_name << ". Waiting for memory...\n";
+					// std::cout << "No available frames for CPU " << cpu.cpu_name << ". Waiting for memory...\n";
 					return;  // No available frames, skip this CPU
 				}
 			}
@@ -437,7 +444,55 @@ public:
         std::cout << "Pages Paged Out: " << pager.pagesPagedOut << "\n";
     }
 
+    void printProcessSMI() {
+        std::cout << "========= process-smi =========\n";
 
+        // --- CPU Utilization ---
+        int idleCPUs = 0;
+        for (const auto& cpu : cpus) {
+            if (cpu.isIdle) idleCPUs++;
+        }
+        float cpuUtil = static_cast<float>(num_cpu - idleCPUs) / num_cpu * 100.0f;
+        std::cout << "CPU Utilization: " << cpuUtil << "%\n";
+        std::cout << "Cores Used: " << (num_cpu - idleCPUs) << " / " << num_cpu << "\n";
+
+        // --- Memory Usage ---
+        int maxMemoryBytes = config.max_overall_mem;
+        int memPerFrame = config.mem_per_frame;
+
+        int usedFrames = 0;
+        for (const auto& entry : pager.pageTable) {
+            if (!entry.second.first.empty()) {
+                usedFrames++;
+            }
+        }
+
+        int usedMemory = usedFrames * memPerFrame;
+        float memUtil = static_cast<float>(usedMemory) / maxMemoryBytes * 100.0f;
+
+        int freeMemory = maxMemoryBytes - usedMemory;
+
+        std::cout << "Memory Utilization: " << memUtil << "%\n";
+        std::cout << "Used Memory: " << usedMemory << " / " << maxMemoryBytes << " bytes\n";
+        std::cout << "Free Memory: " << freeMemory << " bytes\n";
+
+        std::cout << "===============================\n";
+        std::cout << "\nRunning processes and memory usage:\n";
+
+        // Map to hold memory usage per process
+        std::unordered_map<std::string, int> processMemoryMap;
+
+        for (const auto& entry : pager.pageTable) {
+            const std::string& processName = entry.second.first;
+            if (!processName.empty()) {
+                processMemoryMap[processName] += memPerFrame;
+            }
+        }
+
+        for (const auto& entry : processMemoryMap) {
+            std::cout << entry.first << " " << entry.second << " bytes\n";
+        }
+    }
 };
 
 #endif // SCHEDULER_H

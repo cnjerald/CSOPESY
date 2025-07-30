@@ -50,13 +50,14 @@ int mainMenu() {
 
     std::map<std::string, int> stringMap = {
         {"initialize",1},
-        {"screen -ls",2},
+        {"screen-ls",2},
         {"scheduler-start",3},
         {"scheduler-stop",4},
         {"report-util",5},
         {"clear",6},
         {"exit",7},
-        {"vmstat",11}
+        {"vmstat",11},
+        {"process-smi",12}
     };
 
     std::string command;
@@ -112,6 +113,7 @@ int mainMenu() {
 				int total_frames = config.max_overall_mem / config.mem_per_frame;
 
                 scheduler = new Scheduler(config.num_cpu, config.scheduler, config.quantum_cycles,config.delay_per_exec,total_frames);
+                scheduler->setConfig(config);
 
                 std::thread cycleThread(&Scheduler::runOneCycleLoop, scheduler);
                 cycleThread.detach();
@@ -199,6 +201,9 @@ int mainMenu() {
             case 11:
                 scheduler->printVMStat();
 				break;
+            case 12:
+                scheduler->printProcessSMI();
+				break;    
         }
 
     } while (choice != 7);
