@@ -55,11 +55,12 @@ public:
         if (!handlePageFault(pager)) {
             std::cout << "Page fault at line " << currentLine
                 << " (Page #" << getPageIndexForLine(currentLine)
-                << ") � not in memory.\n";
+                << ") \n";
             return; // Wait for memory before executing
         }
 
         assigned_process.executeInstruction();
+
 
         // Evict any no-longer-needed pages after execution
         evictUnusedPages(pager);

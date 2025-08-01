@@ -101,7 +101,8 @@ public:
         if (pageIndex >= pages.size() || !pages[pageIndex].isValid) {
             std::cout << "Page fault at line " << currentLine
                 << " (Page #" << pageIndex << ") — not in memory.\n";
-            return; // Simulate page fault — don’t execute
+            // Returns false if fault.
+            return;
         }
 
         std::string instr = instructions[currentLine];
@@ -147,6 +148,7 @@ public:
             return;
         }
         currentLine++;
+        return;
 
     }
 

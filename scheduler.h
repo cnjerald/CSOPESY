@@ -77,6 +77,7 @@ public:
                         }
                     }
                 }
+                
                 // asign remaining pages of process->pages to backinstore.
                 cpu.assignProcess(*process);  // Pass by reference
                 processQueue.pop_front();     // Remove from queue after assignment
@@ -262,11 +263,37 @@ public:
                         cpu.RRexecutionCounter++;
                     }
                     else if (cpu.RRexecutionCounter > cpu.quantum_cycles && !cpu.isIdle) {
-                        processQueue.push_back(std::make_unique<Process>(cpu.getCurrentProcess()));
+                        Process current = cpu.getCurrentProcess();
+
+                        // Purge memory used by the current process
+                        for (int i = 0; i < current.pages.size(); ++i) {
+                            if (current.pages[i].isValid) {
+                                pager.removeFrame(current.getName(), i);
+                                current.pages[i].isValid = false;
+                            }
+                        }
+
+                        // Requeue the modified process
+                        processQueue.push_back(std::make_unique<Process>(current));
                         if (!processQueue.empty()) {
-                            cpu.assignProcess(*processQueue.front());
+
+                            Process* process = processQueue.front().get();
+
+                            // Ensure all required pages are loaded into memory
+                            for (int i = 0; i < process->pages.size(); ++i) {
+                                if (!process->pages[i].isValid) {
+                                    bool success = pager.assignFrame(process->getName(), i);
+                                    if (success) {
+                                        process->pages[i].isValid = true;
+                                    }
+                                }
+                            }
+
+                            // Assign the process to the CPU and remove it from the queue
+                            cpu.assignProcess(*process);
                             processQueue.pop_front();
                             cpu.RRexecutionCounter = 0;
+
                         }
                     }
 

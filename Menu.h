@@ -26,7 +26,6 @@ void createProcess(Scheduler* scheduler, Config config) {
     
 	int randomPageCount = min_frames + (rand() % (max_frames - min_frames + 1));
 
-	std::cout << "DEBUGGER!" << randomPageCount << std::endl;
     while (schedulerRunning) {
         if (skipCount < N) {
             ++skipCount;
