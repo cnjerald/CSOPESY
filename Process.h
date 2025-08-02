@@ -99,9 +99,6 @@ public:
         int pageIndex = currentLine / instructionsPerPage;
 
         if (pageIndex >= pages.size() || !pages[pageIndex].isValid) {
-            std::cout << "Page fault at line " << currentLine
-                << " (Page #" << pageIndex << ") — not in memory.\n";
-            // Returns false if fault.
             return;
         }
 

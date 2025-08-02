@@ -123,6 +123,27 @@ public:
             std::cout << line << '\n';
         }
     }
+
+    // Check if a specific entry exists in store.txt
+    bool contains(const std::string& target) const {
+        std::ifstream file(filePath);
+        if (!file) {
+            std::cerr << "Failed to open store.txt for reading in contains().\n";
+            return false;
+        }
+
+        std::string line;
+        std::string formattedTarget = target + ",";
+
+        while (std::getline(file, line)) {
+            if (line == formattedTarget) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 };
 
 #endif // BACK_IN_STORE_H

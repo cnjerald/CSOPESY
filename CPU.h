@@ -31,15 +31,13 @@ public:
         isIdle = false;
     }
 
-    // Simulate one clock cycle
-    void oneClockCycle(Pager& pager) {
-        // Add to total ticks
+        // Simulate one clock cycle
+    bool oneClockCycle(Pager& pager) {
         totalTicks++;
         if (isIdle) {
             idleTicks++;
-        return;
+            return false;
         }
-        // Add to active ticks if it gets pass idle
         activeTicks++;
 
         int currentLine = assigned_process.currentLine;
@@ -48,32 +46,43 @@ public:
         if (currentLine >= totalLines) {
             assigned_process.setStatus("finished");
             evictUnusedPages(pager);
-            return;
+            return false;
         }
 
-        // Ensure the page for currentLine is in memory
         if (!handlePageFault(pager)) {
             std::cout << "Page fault at line " << currentLine
-                << " (Page #" << getPageIndexForLine(currentLine)
-                << ") \n";
-            return; // Wait for memory before executing
+                      << " (Page #" << getPageIndexForLine(currentLine)
+                      << ") \n";
+            return false;
         }
 
         assigned_process.executeInstruction();
+        bool evicted = evictUnusedPages(pager);
 
+        // Re-assign frame after eviction, if needed
+        if (evicted) {
+            int pageNumber = getPageIndexForLine(assigned_process.currentLine);
+            if (pageNumber < assigned_process.pages.size()) {
+                if (pager.assignFrame(assigned_process.getName(), pageNumber)) {
+                    assigned_process.pages[pageNumber].isValid = true;
+                    std::cout << "Reassigned page #" << pageNumber << " after eviction.\n";
+                }
+            }
+        }
 
-        // Evict any no-longer-needed pages after execution
-        evictUnusedPages(pager);
-
+        return evicted;
     }
 
-    void evictUnusedPages(Pager& pager) {
+
+	// Return true if it evicts, false if no eviction occurred.
+    bool evictUnusedPages(Pager& pager) {
         const auto& instructions = assigned_process.instructions;
         auto& pages = assigned_process.pages;
         int currentLine = assigned_process.currentLine;
         const std::string& name = assigned_process.getName();
 
         int instructionsPerPage = std::ceil((float)instructions.size() / pages.size());
+        bool evictedAny = false;
 
         for (int i = 0; i < pages.size(); ++i) {
             int startLine = i * instructionsPerPage;
@@ -83,13 +92,19 @@ public:
                 pages[i].isValid = false;
                 pager.removeFrame(name, i);
                 std::cout << "Evicted page #" << i << " of process " << name << '\n';
+                evictedAny = true;
             }
         }
+
+        return evictedAny;
     }
+
 
     bool handlePageFault(Pager& pager) {
         int currentLine = assigned_process.currentLine;
         int pageIndex = getPageIndexForLine(currentLine);
+		std::cout << "Handling page fault for line " << currentLine
+			<< " (Page #" << pageIndex << ") \n";
         if (!assigned_process.pages[pageIndex].isValid) {
             if (pager.assignFrame(assigned_process.getName(), pageIndex)) {
                 assigned_process.pages[pageIndex].isValid = true;

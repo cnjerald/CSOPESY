@@ -77,8 +77,8 @@ public:
                         }
                     }
                 }
-                
                 // asign remaining pages of process->pages to backinstore.
+
                 cpu.assignProcess(*process);  // Pass by reference
                 processQueue.pop_front();     // Remove from queue after assignment
             }
@@ -240,7 +240,9 @@ public:
     void runOneCycle() {
         if (scheduler == "FCFS") {
             for (auto& cpu : cpus) {
-                cpu.oneClockCycle(pager);
+                bool flag = cpu.oneClockCycle(pager);
+
+
                 if (cpu.isFinished()) {
                     Process finished = cpu.retrieveFinishedProcess();
 
