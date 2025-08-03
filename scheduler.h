@@ -49,41 +49,55 @@ public:
 
     void checkQueue() {
         for (auto& cpu : cpus) {
-            // Check if memory is available first before assigning to CPU (FCFS) no preemption soo..
-			if (cpu.isAvailable() && !pager.pageTable.empty()) {
-				// Check if any frame is available
-				bool frameAvailable = false;
-				for (const auto& entry : pager.pageTable) {
-					if (entry.second.first.empty()) {  // Empty frame
-						frameAvailable = true;
-						break;
-					}
-				}
-				if (!frameAvailable) {
-					// std::cout << "No available frames for CPU " << cpu.cpu_name << ". Waiting for memory...\n";
-					return;  // No available frames, skip this CPU
-				}
-			}
-            
+            // Check if memory is available before assigning
+            if (cpu.isAvailable() && !pager.pageTable.empty()) {
+                bool frameAvailable = false;
+                for (const auto& entry : pager.pageTable) {
+                    if (entry.second.first.empty()) {
+                        frameAvailable = true;
+                        break;
+                    }
+                }
+                if (!frameAvailable) return;  // No memory available
+            }
+
+            // Assign process if scheduler is FCFS or RR
             if ((scheduler == "FCFS" || scheduler == "RR") && cpu.isAvailable() && !processQueue.empty()) {
                 Process* process = processQueue.front().get();
 
-                // Assign pages to frames before assigning to CPU
-                for (int i = 0; i < process->pages.size(); ++i) {
-                    if (!process->pages[i].isValid) {
-                        bool success = pager.assignFrame(process->getName(), i);
-                        if (success) {
-                            process->pages[i].isValid = true;
-                        }
+                // Identify which page needs to be loaded for currentLine
+                int instructionsPerPage = std::ceil((float)process->instructions.size() / process->pages.size());
+                if (instructionsPerPage == 0) instructionsPerPage = 1; // avoid div-by-zero
+
+                int pageToLoad = process->currentLine / instructionsPerPage;
+
+                // Load that one page only
+                if (!process->pages[pageToLoad].isValid) {
+                    bool success = pager.assignFrame(process->getName(), pageToLoad);
+                    if (success) {
+                        process->pages[pageToLoad].isValid = true;
+                    }
+                    else {
+                        // Memory full — skip CPU assignment
+                        return;
                     }
                 }
-                // asign remaining pages of process->pages to backinstore.
 
-                cpu.assignProcess(*process);  // Pass by reference
-                processQueue.pop_front();     // Remove from queue after assignment
+                // Optional: Push other pages to backinstore (if not already in memory)
+                for (int i = 0; i < process->pages.size(); ++i) {
+                    if (i != pageToLoad && !process->pages[i].isValid) {
+                        std::string identifier = process->getName() + "_page_" + std::to_string(i);
+                        store.push(identifier);
+                    }
+                }
+
+                // Assign process to CPU
+                cpu.assignProcess(*process);
+                processQueue.pop_front();
             }
         }
     }
+
 
 
     void printProcessQueue() {

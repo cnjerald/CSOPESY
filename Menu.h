@@ -46,6 +46,7 @@ void createProcess(Scheduler* scheduler, Config config) {
 int mainMenu() {
     bool initialized = false;
     Scheduler* scheduler = nullptr;
+    std::string instructionText = "";
 
     std::map<std::string, int> stringMap = {
         {"initialize",1},
@@ -65,8 +66,13 @@ int mainMenu() {
     std::string processName;
     std::regex screenR(R"(screen -r (\w+))");
     std::regex screenS(R"(screen -s (\w+)(?:\s+(\d+))?)");
-    std::smatch match;
+    std::regex screenC(R"#(screen\s+-c\s+(\w+)\s+"((?:[^"\\]|\\.)*)")#");
 
+
+
+
+    std::smatch match;
+    
     std::system("chcp 65001");
     clearScreen();
     std::srand(std::time(nullptr));
@@ -90,6 +96,14 @@ int mainMenu() {
         else if (std::regex_match(command, match, screenS)) {
             processName = match[1];
             choice = 9;
+        }
+        else if (std::regex_match(command, match, screenC)) {
+            processName = match[1];
+            instructionText = match[2];
+
+            std::cout << "Process: " << processName << "\n";
+            std::cout << "Instructions: " << instructionText << "\n";
+            choice = 13;
         }
         else {
             choice = -1;
@@ -226,6 +240,23 @@ int mainMenu() {
             case 12:
                 scheduler->printProcessSMI();
 				break;    
+            case 13:
+                std::cout << "Creating a new custom process...\n\n";
+                std::string processTime = getCurrentTime();
+                std::vector<std::string> instructions;
+                std::stringstream ss(instructionText);
+                std::string line;
+                while (std::getline(ss, line, ';')) {
+                    // Trim leading/trailing spaces
+                    line.erase(0, line.find_first_not_of(" \t"));
+                    line.erase(line.find_last_not_of(" \t") + 1);
+                    if (!line.empty()) instructions.push_back(line);
+                }
+
+                // 2. Create the process
+                scheduler->addQueue(Process(processName, processTime, instructions.size(), 1, instructions));
+
+                break;
         }
 
     } while (choice != 7);

@@ -29,6 +29,7 @@ public:
     std::map<std::string, uint16_t> variables;
     int sleepCounter = 0;
     std::vector<Page> pages;
+    bool isCustom = false;
 
     Process()
         : name(""), time(""), totalLines(0),
@@ -45,6 +46,22 @@ public:
         generateRandomPages(pageCount);
         //printPages();
     }
+
+    Process(const std::string& name, const std::string& time, int totalLines, int pageCount,
+        const std::vector<std::string>& instructions)
+        : name(name), time(time), totalLines(totalLines),
+        status("ready"), currentLine(0), assignedCore(-1), instructions(instructions)
+    {
+        std::cout << "HECKPOINT!";
+        std::cout << "Process created: " << name << "\nInstructions:\n";
+        for (const auto& instr : this->instructions) {
+            std::cout << "  - " << instr << '\n';
+        }
+        generateSpecificInstructions(instructions);
+        generateRandomPages(pageCount);
+        isCustom = true;
+    }
+
 
     std::string getName() const { return name; }
     std::string getTime() const { return time; }
@@ -88,64 +105,149 @@ public:
     }
 
     void executeInstruction() {
-        if (sleepCounter > 0) {
-            sleepCounter--;
-            return; // skip this cycle
-        }
 
-        if (currentLine >= instructions.size()) return;
-
-        int instructionsPerPage = std::ceil((float)instructions.size() / pages.size());
-        int pageIndex = currentLine / instructionsPerPage;
-
-        if (pageIndex >= pages.size() || !pages[pageIndex].isValid) {
-            return;
-        }
-
-        std::string instr = instructions[currentLine];
-
-        if (instr.find("PRINT") == 0) {
-            printCommand();
-        }
-        else if (instr.find("DECLARE") == 0) {
-            // e.g. DECLARE(x, 10)
-            std::string var = "x";  // Simulated single var
-            uint16_t val = rand() % 65536;
-            variables[var] = val;
-        }
-        else if (instr.find("ADD") == 0) {
-            std::string var1 = "x";
-            std::string var2 = "x";
-            uint16_t val2 = getValue(var2);
-            uint16_t val3 = rand() % 10;
-            uint32_t result = val2 + val3;
-            variables[var1] = std::min((uint32_t)65535, result);
-        }
-        else if (instr.find("SUBTRACT") == 0) {
-            std::string var1 = "x";
-            std::string var2 = "x";
-            uint16_t val2 = getValue(var2);
-            uint16_t val3 = rand() % 10;
-            int32_t result = static_cast<int32_t>(val2) - static_cast<int32_t>(val3);
-            variables[var1] = static_cast<uint16_t>(std::max(0, result));
-        }
-        else if (instr.find("SLEEP") == 0) {
-            sleepCounter = 1 + (rand() % 3);  // SLEEP(1~3 ticks)
-        }
-        else if (instr.find("FOR") == 0) {
-            // Remaining slots after this instruction
-            int remainingLines = getTotalLines() - currentLine - 1;
-            int maxInsert = std::min(remainingLines, 3);
-            int loopCount = 1 + (rand() % (maxInsert + 1));  // Between 1 and maxInsert
-
-            for (int i = 0; i < loopCount; i++) {
-                currentLine++;
-                instructions.insert(instructions.begin() + currentLine, "PRINT");
+        if (!isCustom) {
+            if (sleepCounter > 0) {
+                sleepCounter--;
+                return; // skip this cycle
             }
+
+            if (currentLine >= instructions.size()) return;
+
+            int instructionsPerPage = std::ceil((float)instructions.size() / pages.size());
+            int pageIndex = currentLine / instructionsPerPage;
+
+            if (pageIndex >= pages.size() || !pages[pageIndex].isValid) {
+                return;
+            }
+
+            std::string instr = instructions[currentLine];
+
+            if (instr.find("PRINT") == 0) {
+                printCommand();
+            }
+            else if (instr.find("DECLARE") == 0) {
+                // e.g. DECLARE(x, 10)
+                std::string var = "x";  // Simulated single var
+                uint16_t val = rand() % 65536;
+                variables[var] = val;
+            }
+            else if (instr.find("ADD") == 0) {
+                std::string var1 = "x";
+                std::string var2 = "x";
+                uint16_t val2 = getValue(var2);
+                uint16_t val3 = rand() % 10;
+                uint32_t result = val2 + val3;
+                variables[var1] = std::min((uint32_t)65535, result);
+            }
+            else if (instr.find("SUBTRACT") == 0) {
+                std::string var1 = "x";
+                std::string var2 = "x";
+                uint16_t val2 = getValue(var2);
+                uint16_t val3 = rand() % 10;
+                int32_t result = static_cast<int32_t>(val2) - static_cast<int32_t>(val3);
+                variables[var1] = static_cast<uint16_t>(std::max(0, result));
+            }
+            else if (instr.find("SLEEP") == 0) {
+                sleepCounter = 1 + (rand() % 3);  // SLEEP(1~3 ticks)
+            }
+            else if (instr.find("FOR") == 0) {
+                // Remaining slots after this instruction
+                int remainingLines = getTotalLines() - currentLine - 1;
+                int maxInsert = std::min(remainingLines, 3);
+                int loopCount = 1 + (rand() % (maxInsert + 1));  // Between 1 and maxInsert
+
+                for (int i = 0; i < loopCount; i++) {
+                    currentLine++;
+                    instructions.insert(instructions.begin() + currentLine, "PRINT");
+                }
+                return;
+            }
+            currentLine++;
             return;
         }
-        currentLine++;
-        return;
+        else {
+            if (sleepCounter > 0) {
+                sleepCounter--;
+                return;
+            }
+
+            if (currentLine > instructions.size()) return;
+
+            int instructionsPerPage = std::ceil((float)instructions.size() / pages.size());
+            int pageIndex = currentLine / instructionsPerPage;
+
+            if (pageIndex > pages.size() || !pages[pageIndex].isValid) {
+                return;
+            }
+
+            std::string instr = instructions[currentLine];
+            std::istringstream iss(instr);
+            std::string command;
+            iss >> command;
+
+            if (command == "DECLARE") {
+                std::string var;
+                uint16_t value;
+                iss >> var >> value;
+                variables[var] = value;
+            }
+            else if (command == "ADD") {
+                std::string dest, op1, op2;
+                iss >> dest >> op1 >> op2;
+                variables[dest] = getValue(op1) + getValue(op2);
+            }
+            else if (command == "SUBTRACT") {
+                std::string dest, op1, op2;
+                iss >> dest >> op1 >> op2;
+                int32_t result = static_cast<int32_t>(getValue(op1)) - static_cast<int32_t>(getValue(op2));
+                variables[dest] = static_cast<uint16_t>(std::max(0, result));
+            }
+            else if (command == "SLEEP") {
+                int duration;
+                iss >> duration;
+                sleepCounter = std::max(1, duration);
+            }
+            else if (command == "WRITE") {
+                std::string addressStr, var;
+                iss >> addressStr >> var;
+                uint16_t val = getValue(var);
+                memory[addressStr] = val;
+                std::cout << "[WRITE] " << addressStr << " <- " << val << '\n';
+            }
+            else if (command == "READ") {
+                std::string var, addressStr;
+                iss >> var >> addressStr;
+                if (memory.find(addressStr) != memory.end()) {
+                    variables[var] = memory[addressStr];
+                }
+                else {
+                    variables[var] = 0; // default if not found
+                }
+                std::cout << "[READ] " << var << " <- " << variables[var] << " (from " << addressStr << ")\n";
+            }
+            else if (instr.find("PRINT") == 0) {
+                std::string output = instr.substr(instr.find("PRINT") + 5);
+                // Replace variables
+                for (auto& [key, value] : variables) {
+                    size_t pos = output.find(key);
+                    if (pos != std::string::npos) {
+                        output.replace(pos, key.length(), std::to_string(value));
+                    }
+                }
+
+                // Clean up the quotes and plus signs
+                output.erase(std::remove(output.begin(), output.end(), '"'), output.end());
+                output.erase(std::remove(output.begin(), output.end(), '+'), output.end());
+
+                std::cout << output << std::endl;
+            }
+
+
+            currentLine++;
+        }
+
+       
 
     }
 
@@ -164,12 +266,40 @@ public:
         }
     }
 
+    void generateSpecificInstructions(const std::vector<std::string>& rawInstructions) {
+        instructions.clear();
+        for (std::string instr : rawInstructions) {
+            // Trim whitespace
+            instr.erase(0, instr.find_first_not_of(" \t"));
+            instr.erase(instr.find_last_not_of(" \t") + 1);
+
+            // Maybe validate instruction here, e.g., check it starts with known keyword
+            static std::vector<std::string> valid = {
+                "PRINT", "ADD", "SUBTRACT", "DECLARE", "SLEEP", "FOR", "WRITE", "READ"
+            };
+            bool isValid = std::any_of(valid.begin(), valid.end(), [&](const std::string& cmd) {
+                return instr.find(cmd) == 0;
+                });
+
+            if (isValid) {
+                instructions.push_back(instr);
+				std::cout << "Added instruction: " << instr << "\n";
+            }
+            else {
+                std::cerr << "Warning: Ignoring unknown instruction: " << instr << "\n";
+            }
+        }
+    }
+
+
 
 
 private:
     std::string name;
     std::string time;
     int totalLines;
+    std::map<std::string, uint16_t> memory;  // Simulated memory for custom read/write
+
 
     uint16_t getValue(const std::string& key) {
         if (variables.find(key) == variables.end()) {

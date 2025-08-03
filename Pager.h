@@ -32,6 +32,7 @@ public:
 
     // Returns true if successfully allocated, false otherwise.
     bool assignFrame(const std::string& processName, int pageNumber) {
+
         // First, try to find an empty frame
         for (auto& entry : pageTable) {
             if (entry.second.first.empty()) {
@@ -61,6 +62,7 @@ public:
                 return true;
             }
         }
+
 
         std::cout << "No empty frames available for Process: " << processName
             << ", Page: " << pageNumber << '\n';
@@ -109,6 +111,8 @@ public:
     int getTotalFrames() const {
         return pageTable.size();
     }
+
+
 };
 
 
