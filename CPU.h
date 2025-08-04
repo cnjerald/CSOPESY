@@ -50,9 +50,9 @@ public:
         }
 
         if (!handlePageFault(pager)) {
-            std::cout << "Page fault at line " << currentLine
-                      << " (Page #" << getPageIndexForLine(currentLine)
-                      << ") \n";
+            // std::cout << "Page fault at line " << currentLine
+            //           << " (Page #" << getPageIndexForLine(currentLine)
+            //           << ") \n";
             return false;
         }
 
@@ -65,7 +65,7 @@ public:
             if (pageNumber < assigned_process.pages.size()) {
                 if (pager.assignFrame(assigned_process.getName(), pageNumber)) {
                     assigned_process.pages[pageNumber].isValid = true;
-                    std::cout << "Reassigned page #" << pageNumber << " after eviction.\n";
+                    // std::cout << "Reassigned page #" << pageNumber << " after eviction.\n";
                 }
             }
         }
@@ -91,7 +91,7 @@ public:
             if (pages[i].isValid && currentLine >= endLine) {
                 pages[i].isValid = false;
                 pager.removeFrame(name, i);
-                std::cout << "Evicted page #" << i << " of process " << name << '\n';
+                // std::cout << "Evicted page #" << i << " of process " << name << '\n';
                 evictedAny = true;
             }
         }
@@ -103,17 +103,24 @@ public:
     bool handlePageFault(Pager& pager) {
         int currentLine = assigned_process.currentLine;
         int pageIndex = getPageIndexForLine(currentLine);
-		std::cout << "Handling page fault for line " << currentLine
-			<< " (Page #" << pageIndex << ") \n";
-        if (!assigned_process.pages[pageIndex].isValid) {
-            if (pager.assignFrame(assigned_process.getName(), pageIndex)) {
-                assigned_process.pages[pageIndex].isValid = true;
-                std::cout << "Handled page fault: Assigned Page #" << pageIndex << '\n';
-                return true;
-            }
-            return false; // Still no free frame
+        
+        // If page is already valid, no fault
+        if (assigned_process.pages[pageIndex].isValid) {
+            return true;
         }
-        return true; // Page already valid
+
+        // Try to assign frame (will swap pages if needed)
+        if (pager.assignFrame(assigned_process.getName(), pageIndex)) {
+            assigned_process.pages[pageIndex].isValid = true;
+            // Invalidate any other pages that might be marked valid
+            for (int i = 0; i < assigned_process.pages.size(); i++) {
+                if (i != pageIndex) {
+                    assigned_process.pages[i].isValid = false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     int getPageIndexForLine(int line) const {

@@ -32,52 +32,52 @@ public:
 
     // Returns true if successfully allocated, false otherwise.
     bool assignFrame(const std::string& processName, int pageNumber) {
-
-        // First, try to find an empty frame
+        // First check if this page is already loaded
         for (auto& entry : pageTable) {
-            if (entry.second.first.empty()) {
-                entry.second = { processName, pageNumber };
-                pagesPagedIn++;
-                std::cout << "Assigned Frame " << entry.first
-                    << " to Process: " << processName
-                    << ", Page: " << pageNumber << '\n';
-                std::string pageIdentifier = processName + "_page_" + std::to_string(pageNumber);
-                store->deleteEntry(pageIdentifier);
-                return true;
+            if (entry.second.first == processName && entry.second.second == pageNumber) {
+                return true; // Page already in memory
             }
         }
 
-        // If no empty frame, evict one **belonging to the same process**
+        // Find existing frame assigned to this process (there should be exactly one)
+        int existingFrame = -1;
         for (auto& entry : pageTable) {
             if (entry.second.first == processName) {
-                int evictPage = entry.second.second;
-                std::cout << "Evicting page #" << evictPage << " of process " << processName << '\n';
-                std::string evictIdentifier = processName + "_page_" + std::to_string(evictPage);
-                store->push(evictIdentifier); // Save to store
-                entry.second = { processName, pageNumber };
-                std::cout << "Assigned Frame " << entry.first
-                    << " to Process: " << processName
-                    << ", Page: " << pageNumber << '\n';
+                existingFrame = entry.first;
+                break;
+            }
+        }
+
+        if (existingFrame != -1) {
+            // Evict the current page and load the new one
+            int evictPage = pageTable[existingFrame].second;
+            std::string evictIdentifier = processName + "_page_" + std::to_string(evictPage);
+            store->push(evictIdentifier);
+            
+            pageTable[existingFrame] = {processName, pageNumber};
+            store->deleteEntry(processName + "_page_" + std::to_string(pageNumber));
+            pagesPagedIn++;
+            pagesPagedOut++;
+            return true;
+        }
+
+        // Try to find any empty frame
+        for (auto& entry : pageTable) {
+            if (entry.second.first.empty()) {
+                entry.second = {processName, pageNumber};
+                pagesPagedIn++;
                 store->deleteEntry(processName + "_page_" + std::to_string(pageNumber));
                 return true;
             }
         }
 
-
-        std::cout << "No empty frames available for Process: " << processName
-            << ", Page: " << pageNumber << '\n';
-
-        return false;
+        return false; // No available frames
     }
-
-
-
-
 
     void removeFrame(const std::string& processName, int pageNumber) {
         for (auto& entry : pageTable) {
             if (entry.second.first == processName && entry.second.second == pageNumber) {
-                std::cout << "Evicted page #" << pageNumber << " of process " << processName << '\n';
+                // std::cout << "Evicted page #" << pageNumber << " of process " << processName << '\n';
                 entry.second = { "", -1 };
 
                 // Optional: notify process so it updates isValid
@@ -86,7 +86,6 @@ public:
             }
         }
     }
-
 
     // Checks if a specific page of a process is currently in memory
     bool hasPageInMemory(const std::string& processName, int pageNumber) const {

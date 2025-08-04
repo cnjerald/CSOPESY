@@ -78,7 +78,7 @@ public:
                         process->pages[pageToLoad].isValid = true;
                     }
                     else {
-                        // Memory full — skip CPU assignment
+                        // Memory full ï¿½ skip CPU assignment
                         return;
                     }
                 }
