@@ -67,10 +67,7 @@ int mainMenu() {
     std::regex screenR(R"(screen -r (\w+))");
     std::regex screenS(R"(screen -s (\w+)(?:\s+(\d+))?)");
     std::regex screenC(R"#(screen\s+-c\s+(\w+)\s+"((?:[^"\\]|\\.)*)")#");
-
-
-
-
+    
     std::smatch match;
     
     std::system("chcp 65001");
