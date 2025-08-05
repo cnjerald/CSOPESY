@@ -21,25 +21,24 @@ void createProcess(Scheduler* scheduler, Config config) {
     static int totalCreated = 0;
     static int skipCount = 0;
     const int N = config.batch_process_freq;
-	int max_frames = config.max_mem_per_proc / config.mem_per_frame;
-	int min_frames = config.min_mem_per_proc / config.mem_per_frame;
+    int max_frames = std::max(1, config.max_mem_per_proc / config.mem_per_frame);
+    int min_frames = std::max(1, config.min_mem_per_proc / config.mem_per_frame);
     
-	int randomPageCount = min_frames + (rand() % (max_frames - min_frames + 1));
+    int randomPageCount = min_frames + (rand() % (max_frames - min_frames + 1));
 
     while (schedulerRunning) {
         if (skipCount < N) {
             ++skipCount;
-            continue; // Skip this loop iteration to simulate delay
+            continue;
         }
 
-        skipCount = 0; // Reset skip counter
-
+        skipCount = 0;
         std::string processName = "SampleProcess" + std::to_string(totalCreated++);
         std::string processTime = getCurrentTime();
         int instructionCount = config.min_ins + (rand() % (config.max_ins - config.min_ins + 1));
 
         scheduler->addQueue(Process(processName, processTime, instructionCount, randomPageCount));
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // PARA D SUMABOG PC NYO WAG NYO MASYADO BABAAN
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
 
@@ -205,8 +204,8 @@ int mainMenu() {
                     }
                 } else {
                     // General use case: screen -s name
-                    int max_frames = config.max_mem_per_proc / config.mem_per_frame;
-                    int min_frames = config.min_mem_per_proc / config.mem_per_frame;
+                    int max_frames = std::max(1, config.max_mem_per_proc / config.mem_per_frame);
+                    int min_frames = std::max(1, config.min_mem_per_proc / config.mem_per_frame);
                     int randomPageCount = min_frames + (rand() % (max_frames - min_frames + 1));
                     requestedMemory = randomPageCount * config.mem_per_frame;
                 }
