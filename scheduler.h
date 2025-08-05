@@ -78,7 +78,7 @@ public:
                         process->pages[pageToLoad].isValid = true;
                     }
                     else {
-                        // Memory full — skip CPU assignment
+                        // Memory full ï¿½ skip CPU assignment
                         return;
                     }
                 }
@@ -252,6 +252,11 @@ public:
     }
 
     void runOneCycle() {
+
+        for (auto& cpu : cpus) {
+            cpu.isExecuting = false;
+        }
+
         if (scheduler == "FCFS") {
             for (auto& cpu : cpus) {
                 bool flag = cpu.oneClockCycle(pager);
@@ -367,25 +372,52 @@ public:
                 Process& p = cpu.getCurrentProcess();
                 clearScreen();
                 std::string input;
+                
+                // Print initial process info
                 std::cout << "Process name: " << p.getName() << "\n";
                 std::cout << "ID: " << p.assignedCore << "\n";
                 std::cout << "Logs:\n";
-                for (const auto& log : p.logs) std::cout << log << "\n";
+                
+                // Read and display logs
+                std::string filePath = "logs/" + p.getName() + ".txt";
+                std::ifstream logFile(filePath);
+                if (logFile.is_open()) {
+                    std::string line;
+                    while (std::getline(logFile, line)) {
+                        std::cout << line << "\n";
+                    }
+                    logFile.close();
+                }
+                
                 std::cout << "\nCurrent instruction line: " << p.currentLine << "\n";
                 std::cout << "Lines of code: " << p.getTotalLines() << "\n\n";
 
                 do {
                     std::cout << "root:\\> ";
                     std::getline(std::cin, input);
+                    
                     if (input == "process-smi") {
+                        clearScreen();
                         std::cout << "Process name: " << p.getName() << "\n";
                         std::cout << "ID: " << p.assignedCore << "\n";
                         std::cout << "Logs:\n";
-                        for (const auto& log : p.logs) std::cout << log << "\n";
+                        
+                        // Re-read logs to get any new entries
+                        std::ifstream updatedLogFile(filePath);
+                        if (updatedLogFile.is_open()) {
+                            std::string line;
+                            while (std::getline(updatedLogFile, line)) {
+                                std::cout << line << "\n";
+                            }
+                            updatedLogFile.close();
+                        }
+                        
                         std::cout << "\nCurrent instruction line: " << p.currentLine << "\n";
                         std::cout << "Lines of code: " << p.getTotalLines() << "\n";
-                        if (p.status == "finished" || p.currentLine == p.getTotalLines())
+                        
+                        if (p.status == "finished" || p.currentLine >= p.getTotalLines()) {
                             std::cout << "\nFinished!\n";
+                        }
                     }
                     else if (input != "exit") {
                         std::cout << "Unknown command\n";
@@ -397,16 +429,28 @@ public:
             }
         }
 
+        // Similar updates for finished processes and queued processes...
         for (const auto& p : finishedProcesses) {
             if (p.getName() == name) {
                 clearScreen();
                 std::cout << "Process name: " << p.getName() << "\n";
                 std::cout << "ID: " << p.assignedCore << "\n";
                 std::cout << "Logs:\n";
-                for (const auto& log : p.logs) std::cout << log << "\n";
+                
+                std::string filePath = "logs/" + p.getName() + ".txt";
+                std::ifstream logFile(filePath);
+                if (logFile.is_open()) {
+                    std::string line;
+                    while (std::getline(logFile, line)) {
+                        std::cout << line << "\n";
+                    }
+                    logFile.close();
+                }
+                
                 std::cout << "\nCurrent instruction line: " << p.currentLine << "\n";
                 std::cout << "Lines of code: " << p.getTotalLines() << "\n";
                 std::cout << "\nFinished!\n";
+                
                 std::cout << "root:\\> ";
                 std::string dummy;
                 std::getline(std::cin, dummy);
@@ -420,7 +464,7 @@ public:
                 clearScreen();
                 std::cout << "Process name: " << p->getName() << "\n";
                 std::cout << "ID: waiting\n";
-                std::cout << "Logs:\n(No logs yet. Waiting to be scheduled...)\n";
+                std::cout << "Logs:\n\n";
                 std::cout << "\nCurrent instruction line: " << p->currentLine << "\n";
                 std::cout << "Lines of code: " << p->getTotalLines() << "\n";
                 std::cout << "\nroot:\\> ";
@@ -490,14 +534,20 @@ public:
     void printProcessSMI() {
         std::cout << "========= process-smi =========\n";
 
-        // --- CPU Utilization ---
-        int idleCPUs = 0;
+        // Count actually executing CPUs (not just non-idle)
+        int executingCPUs = 0;
         for (const auto& cpu : cpus) {
-            if (cpu.isIdle) idleCPUs++;
+            if (cpu.isExecuting) {
+                executingCPUs++;
+            }
         }
-        float cpuUtil = static_cast<float>(num_cpu - idleCPUs) / num_cpu * 100.0f;
+
+        // Calculate utilization based on executing CPUs
+        float cpuUtil = executingCPUs > 0 ? 
+            (static_cast<float>(executingCPUs) / num_cpu * 100.0f) : 0.0f;
+        
         std::cout << "CPU Utilization: " << cpuUtil << "%\n";
-        std::cout << "Cores Used: " << (num_cpu - idleCPUs) << " / " << num_cpu << "\n";
+        std::cout << "Cores Executing: " << executingCPUs << " / " << num_cpu << "\n";
 
         // --- Memory Usage ---
         int maxMemoryBytes = config.max_overall_mem;

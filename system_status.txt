@@ -1,13 +1,12 @@
-CPU Utilization: 100%
-Cores Used: 4
-Cores Available: 0
+CPU Utilization: 0%
+Cores Used: 0
+Cores Available: 16
 ==========================================
 === Current Process Queue ===
-  Name: SampleProcess1 | Time: 06/21/2025, 01:03:33 PM | Progress: 9/25 | Status: ready
-  Name: SampleProcess5 | Time: 06/21/2025, 01:03:37 PM | Progress: 0/25 | Status: ready
+  Name: SampleProcess0 | Time: 08/05/2025, 01:41:58 AM | Progress: 0/1449 | Status: ready
+  Name: SampleProcess1 | Time: 08/05/2025, 01:41:59 AM | Progress: 0/1819 | Status: ready
+  Name: SampleProcess2 | Time: 08/05/2025, 01:42:00 AM | Progress: 0/1220 | Status: ready
+  Name: SampleProcess3 | Time: 08/05/2025, 01:42:01 AM | Progress: 0/1670 | Status: ready
+  Name: SampleProcess4 | Time: 08/05/2025, 01:42:02 AM | Progress: 0/1533 | Status: ready
 === Current Processes on CPUs ===
-Current process on CPU0:  Name: SampleProcess0 | Time: 06/21/2025, 01:03:32 PM | Progress: 5/25 | Status: ready
-Current process on CPU1:  Name: SampleProcess4 | Time: 06/21/2025, 01:03:36 PM | Progress: 1/25 | Status: ready
-Current process on CPU2:  Name: SampleProcess2 | Time: 06/21/2025, 01:03:34 PM | Progress: 7/25 | Status: ready
-Current process on CPU3:  Name: SampleProcess3 | Time: 06/21/2025, 01:03:35 PM | Progress: 7/25 | Status: ready
 No finished processes.

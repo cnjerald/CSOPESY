@@ -67,6 +67,20 @@ public:
     std::string getTime() const { return time; }
     int getTotalLines() const { return totalLines; }
 
+    void addLog(const std::string& message) {
+        std::string logEntry = getCurrentTime() + message;
+        logs.push_back(logEntry);
+        
+        // Write to log file
+        std::filesystem::create_directory("logs");
+        std::string filePath = "logs/" + name + ".txt";
+        std::ofstream file(filePath, std::ios::app);
+        if (file.is_open()) {
+            file << logEntry << "\n";
+            file.close();
+        }
+    }
+
     void generateRandomPages(int pageCount) {
         for (int i = 0; i < pageCount; ++i) {
             pages.push_back(Page{ i, false }); // TEST Marked invalid initially
@@ -84,17 +98,17 @@ public:
 
     void printCommand() {
         std::string msg = "Hello world from " + name + "!";
-        std::string logEntry = getCurrentTime() + " Core:" + std::to_string(assignedCore)
-            + " " + msg;
-
+        std::string logEntry = "(" + getCurrentTime() + ") Core:" + std::to_string(assignedCore) 
+            + " \"" + msg + "\"";
+        
         logs.push_back(logEntry);
-
+        
         // Ensure the "logs" directory exists
         std::filesystem::create_directory("logs");
-
+        
         std::string filePath = "logs/" + name + ".txt";
         std::ofstream file(filePath, std::ios::app);
-
+        
         if (file.is_open()) {
             file << logEntry << "\n";
             file.close();
@@ -273,26 +287,23 @@ public:
             instr.erase(0, instr.find_first_not_of(" \t"));
             instr.erase(instr.find_last_not_of(" \t") + 1);
 
-            // Maybe validate instruction here, e.g., check it starts with known keyword
             static std::vector<std::string> valid = {
                 "PRINT", "ADD", "SUBTRACT", "DECLARE", "SLEEP", "FOR", "WRITE", "READ"
             };
             bool isValid = std::any_of(valid.begin(), valid.end(), [&](const std::string& cmd) {
                 return instr.find(cmd) == 0;
-                });
+            });
 
             if (isValid) {
                 instructions.push_back(instr);
-				std::cout << "Added instruction: " << instr << "\n";
+                // Use addLog instead of cout
+                addLog("Added instruction: " + instr);
             }
             else {
-                std::cerr << "Warning: Ignoring unknown instruction: " << instr << "\n";
+                addLog("Warning: Ignoring unknown instruction: " + instr);
             }
         }
     }
-
-
-
 
 private:
     std::string name;
