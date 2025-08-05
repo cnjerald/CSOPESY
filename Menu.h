@@ -27,12 +27,14 @@ void createProcess(Scheduler* scheduler, Config config) {
     int randomPageCount = min_frames + (rand() % (max_frames - min_frames + 1));
 
     while (schedulerRunning) {
-        if (skipCount < N) {
-            ++skipCount;
-            continue;
-        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(N*100));
+        // if (skipCount < N) {
+        //     ++skipCount;
+        //     continue;
+        // }
 
-        skipCount = 0;
+        // skipCount = 0;
+
         std::string processName = "SampleProcess" + std::to_string(totalCreated++);
         std::string processTime = getCurrentTime();
         int instructionCount = config.min_ins + (rand() % (config.max_ins - config.min_ins + 1));
