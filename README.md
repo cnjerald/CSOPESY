@@ -6,3 +6,9 @@
 4. Create 10 dummy process using "scheduler-start"
 5. Check the progress of the process "screen -ls"
 6. Check the logs in the logs folder.
+
+## Submitted by:
+Figueroa, Sebastian P.
+Loja, Kyle F.
+Musngi, Mark Christian S.
+Tabuzo, Jerald Krister O.
