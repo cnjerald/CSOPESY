@@ -252,6 +252,11 @@ public:
     }
 
     void runOneCycle() {
+
+        for (auto& cpu : cpus) {
+            cpu.isExecuting = false;
+        }
+
         if (scheduler == "FCFS") {
             for (auto& cpu : cpus) {
                 bool flag = cpu.oneClockCycle(pager);
@@ -529,14 +534,20 @@ public:
     void printProcessSMI() {
         std::cout << "========= process-smi =========\n";
 
-        // --- CPU Utilization ---
-        int idleCPUs = 0;
+        // Count actually executing CPUs (not just non-idle)
+        int executingCPUs = 0;
         for (const auto& cpu : cpus) {
-            if (cpu.isIdle) idleCPUs++;
+            if (cpu.isExecuting) {
+                executingCPUs++;
+            }
         }
-        float cpuUtil = static_cast<float>(num_cpu - idleCPUs) / num_cpu * 100.0f;
+
+        // Calculate utilization based on executing CPUs
+        float cpuUtil = executingCPUs > 0 ? 
+            (static_cast<float>(executingCPUs) / num_cpu * 100.0f) : 0.0f;
+        
         std::cout << "CPU Utilization: " << cpuUtil << "%\n";
-        std::cout << "Cores Used: " << (num_cpu - idleCPUs) << " / " << num_cpu << "\n";
+        std::cout << "Cores Executing: " << executingCPUs << " / " << num_cpu << "\n";
 
         // --- Memory Usage ---
         int maxMemoryBytes = config.max_overall_mem;

@@ -12,6 +12,7 @@ public:
     Process assigned_process;
     int quantum_cycles;
     bool isIdle;
+    bool isExecuting = false;
     int RRexecutionCounter = 0;
     int idleTicks = 0;
     int activeTicks = 0;
@@ -36,8 +37,11 @@ public:
         totalTicks++;
         if (isIdle) {
             idleTicks++;
+            isExecuting = false;
             return false;
         }
+        
+        isExecuting = true;
         activeTicks++;
 
         int currentLine = assigned_process.currentLine;
